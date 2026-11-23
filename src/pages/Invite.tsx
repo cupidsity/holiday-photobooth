@@ -304,11 +304,18 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
         const windowHeight = (paperHeight * 0.74) / 3
         const windowGap = paperHeight * 0.025
         const firstWindow = paperTop + paperHeight * 0.05
+        // characters are drawn from their centre, so a window has to be
+        // treated as half a cell bigger than it is or the glyphs beside it
+        // hang over the edge
+        const edgeX = cellWidth * 0.5
+        const edgeY = cellHeight * 0.5
         const insideWindow = (x: number, y: number) => {
-          if (x < paperLeft + inset || x > paperLeft + inset + windowWidth) return false
+          if (x < paperLeft + inset - edgeX || x > paperLeft + inset + windowWidth + edgeX) {
+            return false
+          }
           for (let slot = 0; slot < 3; slot += 1) {
             const top = firstWindow + slot * (windowHeight + windowGap)
-            if (y >= top && y <= top + windowHeight) return true
+            if (y >= top - edgeY && y <= top + windowHeight + edgeY) return true
           }
           return false
         }
@@ -331,13 +338,18 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
         // the windows. mapping the tree straight onto the strip instead piles
         // everything into the bottom, because that is where a cone's
         // characters are
-        const paperColumns = Math.ceil(paperWidth / cellWidth)
-        const paperRows = Math.ceil(paperHeight / cellHeight)
+        // the grid of places is inset by half a cell and centred, so every
+        // character sits wholly inside the paper rather than straddling its
+        // edge
+        const landColumns = Math.max(1, Math.floor(paperWidth / cellWidth) - 1)
+        const landRows = Math.max(1, Math.floor(paperHeight / cellHeight) - 1)
+        const landLeft = paperLeft + (paperWidth - (landColumns - 1) * cellWidth) / 2
+        const landTop = paperTop + (paperHeight - (landRows - 1) * cellHeight) / 2
         const landings: number[] = []
-        for (let row = 0; row < paperRows; row += 1) {
-          for (let column = 0; column < paperColumns; column += 1) {
-            const spotX = paperLeft + column * cellWidth
-            const spotY = paperTop + row * cellHeight
+        for (let row = 0; row < landRows; row += 1) {
+          for (let column = 0; column < landColumns; column += 1) {
+            const spotX = landLeft + column * cellWidth
+            const spotY = landTop + row * cellHeight
             if (insideWindow(spotX, spotY)) continue
             landings.push(spotX, spotY)
           }
