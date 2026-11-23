@@ -24,10 +24,10 @@ export type Sticker = {
 // every stock is dark, because a photogram only reads when the paper is darker
 // than the thing laid on it
 export const PAPER_FRAMES: Frame[] = [
+  { id: 'forest', name: 'forest', kind: 'paper', background: '#16412a', ink: '#eef3e9' },
+  { id: 'cranberry', name: 'cranberry', kind: 'paper', background: '#6d1123', ink: '#fbe8e2' },
   { id: 'sunprint', name: 'sunprint', kind: 'paper', background: '#123a6e', ink: '#eaf3fc' },
   { id: 'midnight', name: 'midnight', kind: 'paper', background: '#0a1c38', ink: '#dbe9f8' },
-  { id: 'slate', name: 'slate', kind: 'paper', background: '#243a4a', ink: '#e6f0f6' },
-  { id: 'iron', name: 'iron gall', kind: 'paper', background: '#2b2545', ink: '#ebe7fa' },
 ]
 
 type Manifest<T> = { items?: T[] } | T[]

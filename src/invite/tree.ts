@@ -5,21 +5,24 @@ export type TreeCell = {
   row: number
   glyph: string
   kind: TreeKind
+  // half-width of the tree at this row. the scene uses it as the radius of the
+  // cone the glyph sits on, which is what gives the tree depth
+  radius: number
 }
 
-// the invite is the negative of the strips the booth prints: prussian ink on
-// pale paper, which is also the only way round a phone will read the code
+// printed ink on warm paper. the code needs dark glyphs on a pale ground to
+// scan, so the holiday colours all sit at the dark end
 export const INK = {
-  needle: '#1b4f8f',
-  needleDeep: '#123a6e',
-  ornamentRed: '#2f6fb5',
-  ornamentGold: '#0d2a52',
-  trunk: '#15314f',
-  star: '#2f6fb5',
-  snow: '#86a8ca',
+  needle: '#1a5636',
+  needleDeep: '#123c26',
+  ornamentRed: '#a3162b',
+  ornamentGold: '#8a6212',
+  trunk: '#5a3718',
+  star: '#9a6f14',
+  snow: '#7d8a93',
   // everything collapses to this when the view swings overhead, so the code
-  // reads as near-black on pale for the scanner
-  code: '#0c2446',
+  // reads as near-black on paper for the scanner
+  code: '#14241a',
 } as const
 
 const NEEDLES = ['*', '*', '*', '^', '^', '+', '~']
@@ -62,7 +65,7 @@ export function buildTree(width: number, gridHeight: number): TreeCell[] {
   const topRow = Math.max(0, gridHeight - (1 + halves.length + trunkHeight))
 
   // the star is a drawn character in the ascii art, not an icon in the interface
-  cells.push({ column: center, row: topRow, glyph: '★', kind: 'star' }) // taste-skill-ignore
+  cells.push({ column: center, row: topRow, glyph: '★', kind: 'star', radius: 0 }) // taste-skill-ignore
 
   halves.forEach((half, index) => {
     const row = topRow + 1 + index
@@ -71,9 +74,9 @@ export function buildTree(width: number, gridHeight: number): TreeCell[] {
       const isEdge = column === center - half || column === center + half
       const ornamentHere = !isEdge && Math.abs(Math.sin((column * 5 + row * 9) * 1.7)) > 0.955
       if (ornamentHere) {
-        cells.push({ column, row, glyph: pick(ORNAMENTS, column, row), kind: 'ornament' })
+        cells.push({ column, row, glyph: pick(ORNAMENTS, column, row), kind: 'ornament', radius: half })
       } else {
-        cells.push({ column, row, glyph: pick(NEEDLES, column, row, isEdge ? 3 : 0), kind: 'needle' })
+        cells.push({ column, row, glyph: pick(NEEDLES, column, row, isEdge ? 3 : 0), kind: 'needle', radius: half })
       }
     }
   })
@@ -81,7 +84,7 @@ export function buildTree(width: number, gridHeight: number): TreeCell[] {
   for (let index = 0; index < trunkHeight; index += 1) {
     const row = topRow + 1 + halves.length + index
     for (let column = center - 1; column <= center + 1; column += 1) {
-      cells.push({ column, row, glyph: '▓', kind: 'trunk' })
+      cells.push({ column, row, glyph: '▓', kind: 'trunk', radius: 1.4 })
     }
   }
 

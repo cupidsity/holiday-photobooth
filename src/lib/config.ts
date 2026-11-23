@@ -10,7 +10,7 @@ export function boothUrl(): string {
 }
 
 // the name of the booth itself, on the invite and in the app chrome
-export const BOOTH_NAME = 'sunprint booth'
+export const BOOTH_NAME = 'holiday photobooth'
 // printed on the strip footer, and the line the invite leads with
 export const PARTY_NAME = 'holiday party'
 export const PARTY_YEAR = new Date().getFullYear()

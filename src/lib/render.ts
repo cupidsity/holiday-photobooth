@@ -1,6 +1,6 @@
 import { Frame, loadImage } from './assets'
 import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter, withExposure } from './filters'
-import { layGrain, laySpeckle } from './paper'
+import { layGrain, layHalation, laySpeckle, layVignette } from './paper'
 import { FOOTER_HEIGHT, FOOTER_TOP, STRIP, drawCover, photoRect } from './strip'
 
 export type CaptionFace = 'script' | 'serif'
@@ -154,6 +154,8 @@ export async function renderStripBase(
     drawCover(ctx, shot, shot.width, shot.height, rect.x, rect.y, rect.width, rect.height)
     ctx.restore()
     developPhoto(ctx, rect, filter, nativeFilter)
+    layHalation(ctx, rect, options.paper)
+    layVignette(ctx, rect, options.paper)
   }
 
   drawCaption(ctx, options)

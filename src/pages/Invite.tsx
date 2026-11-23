@@ -4,7 +4,7 @@ import { INK } from '../invite/tree'
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
 import '../styles/invite.css'
 
-const PAPER = '#edf3fa'
+const PAPER = '#f6efe2'
 const QUIET_MODULES = 4
 
 // one full cycle of the invite, in milliseconds
@@ -109,6 +109,15 @@ export function Invite() {
       const cosine = Math.cos(angle)
       const sine = Math.sin(angle)
 
+      // the tree turns on its trunk while it is being looked at head on, and
+      // the turn is scaled by how far the view has tipped so that it is exactly
+      // zero at the overhead hold, where the code has to be square
+      const upright = 1 - tilt
+      const spin = reducedMotion ? 0 : Math.sin((now - startedAt) / 4300) * 0.52 * upright
+      const spinCos = Math.cos(spin)
+      const spinSin = Math.sin(spin)
+      const perspective = 0.02 * upright
+
       // the glyphs fade into solid modules near the top of the swing, so the
       // final frame is a clean code rather than a grid of punctuation
       const blockMix = clamp01((tilt - 0.6) / 0.34) ** 1.5
@@ -116,18 +125,44 @@ export function Invite() {
 
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.font = `${cell * 1.08}px "IBM Plex Mono", ui-monospace, monospace`
 
       const halfWidth = (scene.size - 1) / 2
       const halfHeight = (scene.gridHeight - 1) / 2
       const halfDepth = (scene.size - 1) / 2
 
-      for (const point of scene.points) {
-        const screenX = centerX + (point.column - halfWidth) * cell
-        const screenY = centerY + ((point.row - halfHeight) * cosine + (point.depth - halfDepth) * sine) * cell
+      // nearest last, so the front of the tree covers the back of it
+      const order = scene.points
+        .map((point, index) => {
+          const acrossSpun = (point.column - halfWidth) * spinCos + (point.depth - halfDepth) * spinSin
+          const deepSpun = (point.depth - halfDepth) * spinCos - (point.column - halfWidth) * spinSin
+          const high = point.row - halfHeight
+          return {
+            index,
+            acrossSpun,
+            screenHigh: high * cosine + deepSpun * sine,
+            toward: deepSpun * cosine - high * sine,
+          }
+        })
+        .sort((left, right) => right.toward - left.toward)
+
+      let currentFont = 0
+      for (const seat of order) {
+        const point = scene.points[seat.index]
+        const scale = 1 / (1 + seat.toward * perspective)
+        const screenX = centerX + seat.acrossSpun * cell * scale
+        const screenY = centerY + seat.screenHigh * cell * scale
 
         if (glyphAlpha > 0.01) {
-          ctx.globalAlpha = point.snow ? glyphAlpha * 0.85 : glyphAlpha
+          // what is close to the eye prints heavier, which is most of what
+          // makes a field of characters read as a solid thing
+          const nearness = clamp01(0.5 - seat.toward / (scene.size * 1.6))
+          const depthFade = 1 - upright * 0.45 * (1 - nearness)
+          const fontSize = Math.round(cell * 1.08 * scale * 2) / 2
+          if (fontSize !== currentFont) {
+            currentFont = fontSize
+            ctx.font = `${fontSize}px "IBM Plex Mono", ui-monospace, monospace`
+          }
+          ctx.globalAlpha = (point.snow ? glyphAlpha * 0.8 : glyphAlpha) * depthFade
           ctx.fillStyle = mixHex(point.color, INK.code, blockMix)
           ctx.fillText(point.glyph, screenX, screenY)
         }

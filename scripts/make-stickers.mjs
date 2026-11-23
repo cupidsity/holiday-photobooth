@@ -503,10 +503,6 @@ for (const [name, piece] of Object.entries({ ...sigil, ...flash })) {
   writeFileSync(new URL(`${name}.svg`, OUT), flashWrap(piece.art, piece.width, piece.height))
 }
 
-// word stickers are live text in the strip's own faces, so they stay crisp at
-// any size and follow the caption's script or serif setting
-const words = ['merry', 'xoxo', 'so cozy', 'let it snow', 'cheers', 'be mine', 'darling', 'midwinter', 'hello winter', 'forever']
-
 const manifest = {
   items: [
     ...Object.keys(sigil).map((name) => ({
@@ -527,12 +523,6 @@ const manifest = {
       group: 'pressed',
       src: `/stickers/${name}.svg`,
     })),
-    ...words.map((word) => ({
-      id: `word-${word.replace(/[^a-z0-9]+/gi, '-')}`,
-      name: word,
-      group: 'words',
-      text: word,
-    })),
   ],
 }
 writeFileSync(new URL('manifest.json', OUT), JSON.stringify(manifest, null, 2) + '\n')
@@ -543,9 +533,7 @@ console.log(
   Object.keys(sigil).length,
   'sigils,',
   Object.keys(flash).length,
-  'fine-line pieces and',
-  words.length,
-  'words',
+  'fine-line pieces',
 )
 
 

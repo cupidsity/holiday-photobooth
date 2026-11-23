@@ -21,8 +21,11 @@
 }
 
 .intro {
-  justify-content: center;
   align-items: center;
+}
+
+.intro-layout {
+  margin: auto 0;
 }
 
 .intro-layout {
@@ -60,13 +63,6 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-
-.intro-mark {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 18px;
-  color: var(--muted);
 }
 
 .intro-title {
@@ -107,7 +103,7 @@
   position: relative;
   overflow: hidden;
   border-radius: 12px;
-  background: #0b1f3d;
+  background: #10281b;
   border: 1px solid var(--edge);
 }
 
@@ -135,8 +131,8 @@
   justify-content: center;
   padding: 24px;
   text-align: center;
-  background: #0b1f3d;
-  color: #e7eff8;
+  background: #10281b;
+  color: #f1ece0;
 }
 
 .stage-error {
@@ -151,7 +147,7 @@
   place-items: center;
   font-family: var(--serif);
   font-size: clamp(80px, 26vw, 170px);
-  color: #f2f7fd;
+  color: #f6f1e6;
   animation: countdown 0.9s ease-out;
   pointer-events: none;
 }
@@ -200,9 +196,9 @@
   padding: 5px 11px;
   border-radius: var(--radius-control);
   font-size: var(--fs-small);
-  background: rgba(8, 25, 48, 0.62);
-  color: #e7eff8;
-  border: 1px solid rgba(215, 231, 247, 0.26);
+  background: rgba(10, 26, 17, 0.62);
+  color: #f1ece0;
+  border: 1px solid rgba(241, 236, 224, 0.28);
 }
 
 .shot-rail {
@@ -224,7 +220,7 @@
 }
 
 .shot-slot.filled {
-  border-color: var(--prussian);
+  border-color: var(--forest);
 }
 
 .shot-slot img {
@@ -283,7 +279,7 @@
 .slot-mouth {
   height: 26px;
   border-radius: 6px 6px 2px 2px;
-  background: #16283c;
+  background: #27302a;
   position: relative;
 }
 
@@ -296,7 +292,7 @@
   bottom: 4px;
   height: 6px;
   border-radius: 3px;
-  background: #050d18;
+  background: #0a0f0b;
 }
 
 .dropping {
@@ -313,7 +309,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: #f4f8fd;
+  background: #faf5ea;
   animation: develop 4.4s ease-out both;
   pointer-events: none;
 }
@@ -408,6 +404,8 @@
 
 .sticker-handle {
   position: absolute;
+  display: grid;
+  place-items: center;
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -503,12 +501,12 @@
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid var(--edge);
-  background: #9fb4c8;
+  background: #8d9a84;
 }
 
 .tray-item.active .swatch {
-  border-color: var(--prussian);
-  outline: 1px solid var(--prussian);
+  border-color: var(--forest);
+  outline: 1px solid var(--forest);
   outline-offset: -2px;
 }
 
@@ -526,7 +524,7 @@
 }
 
 .swatch-blank {
-  background: #41607f;
+  background: #5d6b4f;
 }
 
 .frame-swatch {
@@ -549,6 +547,12 @@
   font-size: var(--fs-small);
   color: var(--muted);
   text-align: center;
+}
+
+.arrangement-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .sticker-groups {
@@ -576,7 +580,7 @@
   width: 50px;
   height: 50px;
   border-radius: 6px;
-  background: var(--prussian);
+  background: var(--forest);
   display: grid;
   place-items: center;
   padding: 6px;
@@ -595,7 +599,7 @@
   font-family: var(--script);
   font-size: 22px;
   font-weight: 700;
-  color: var(--pale);
+  color: var(--press);
 }
 
 .dial {
@@ -637,7 +641,7 @@
   height: 18px;
   margin-top: -8px;
   border-radius: 50%;
-  background: var(--prussian);
+  background: var(--forest);
 }
 
 .dial input[type='range']::-moz-range-track {
@@ -650,7 +654,7 @@
   height: 18px;
   border: none;
   border-radius: 50%;
-  background: var(--prussian);
+  background: var(--forest);
 }
 
 .caption-fields {
@@ -703,14 +707,8 @@
 }
 
 .face.active {
-  border-color: var(--prussian);
+  border-color: var(--forest);
   color: var(--ink);
-}
-
-.panel-foot {
-  margin: 0;
-  font-size: var(--fs-small);
-  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

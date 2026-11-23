@@ -2,6 +2,7 @@ import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from '
 import { PlacedSticker, StripOptions, captionFamily, ensureFonts, renderStripBase } from '../lib/render'
 import { GRAIN_TILE, grainDataUrl, grainOpacity } from '../lib/paper'
 import { STRIP } from '../lib/strip'
+import { LiftIcon, ResizeIcon } from './icons'
 
 type Props = {
   options: StripOptions
@@ -180,14 +181,14 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
                   }}
                   aria-label="lift this one off"
                 >
-                  ×
+                  <LiftIcon />
                 </button>
                 <button
                   className="sticker-handle transform"
                   onPointerDown={(event) => beginDrag(event, sticker.key, 'transform')}
                   aria-label="resize and turn"
                 >
-                  ⤡
+                  <ResizeIcon />
                 </button>
               </>
             )}

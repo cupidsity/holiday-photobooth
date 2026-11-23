@@ -3,7 +3,7 @@
   display: grid;
   place-items: center;
   padding: clamp(12px, 2.4vmin, 40px);
-  background: #0a1c38;
+  background: #10281b;
 }
 
 .invite-card {
@@ -14,8 +14,8 @@
   align-items: center;
   gap: clamp(6px, 1.4vmin, 20px);
   padding: clamp(16px, 3vmin, 44px);
-  background: #edf3fa;
-  color: #0c2446;
+  background: #f6efe2;
+  color: #14241a;
   cursor: pointer;
 }
 
@@ -35,7 +35,7 @@
 .invite-lead {
   margin: 0.5em 0 0;
   font-size: clamp(12px, 1.9vmin, 22px);
-  color: #2d4c74;
+  color: #4b5a4d;
 }
 
 .invite-canvas {
@@ -55,16 +55,16 @@
 .invite-hint {
   margin: 0;
   font-size: clamp(12px, 2vmin, 24px);
-  color: #2d4c74;
+  color: #4b5a4d;
 }
 
 .invite-hint.code {
-  color: #123a6e;
+  color: #a3162b;
   font-weight: 500;
 }
 
 .invite-url {
   margin: 0;
   font-size: clamp(11px, 1.6vmin, 19px);
-  color: #5d7da5;
+  color: #74806f;
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CameraStage } from '../booth/CameraStage'
 import { Dial, FilterTray, FrameTray, StickerTray } from '../booth/Trays'
 import { StripPreview } from '../booth/StripPreview'
+import { ARRANGEMENTS, placeArrangement } from '../booth/presets'
 import { useCamera } from '../booth/useCamera'
 import { Frame, PAPER_FRAMES, Sticker, loadFrames, loadStickers } from '../lib/assets'
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR } from '../lib/config'
@@ -37,8 +38,8 @@ export function Booth() {
   const [thumbnails, setThumbnails] = useState<(string | null)[]>([null, null, null])
   const [frames, setFrames] = useState<Frame[]>(PAPER_FRAMES)
   const [stickerKinds, setStickerKinds] = useState<Sticker[]>([])
-  const [frameId, setFrameId] = useState('sunprint')
-  const [filterId, setFilterId] = useState('cyanotype')
+  const [frameId, setFrameId] = useState('forest')
+  const [filterId, setFilterId] = useState('noel')
   const [exposure, setExposure] = useState(0.52)
   const [paper, setPaper] = useState(0.42)
   const [captionFace, setCaptionFace] = useState<CaptionFace>('script')
@@ -56,7 +57,7 @@ export function Booth() {
   useEffect(() => {
     loadFrames().then((loaded) => {
       setFrames(loaded)
-      setFrameId((current) => (loaded.some((frame) => frame.id === current) ? current : loaded[0]?.id ?? 'sunprint'))
+      setFrameId((current) => (loaded.some((frame) => frame.id === current) ? current : loaded[0]?.id ?? 'forest'))
     })
     loadStickers().then(setStickerKinds)
   }, [])
@@ -237,13 +238,19 @@ export function Booth() {
   if (phase === 'intro') {
     return (
       <div className="booth intro">
+        <header className="bar">
+          <span className="mark">{BOOTH_NAME}</span>
+          <span className="bar-note">
+            {PARTY_NAME} · {PARTY_YEAR}
+          </span>
+        </header>
+
         <div className="intro-layout">
           <div className="intro-card">
-            <p className="intro-mark">{BOOTH_NAME}</p>
-            <h1 className="intro-title">Three photographs, one blue strip.</h1>
+            <h1 className="intro-title">Three photographs, one strip.</h1>
             <p className="intro-copy">
               The booth counts you in three times, then the strip drops out of the slot and develops.
-              Press flowers and sigils into it, set the exposure, keep it.
+              Press flowers and sigils into it, set the look, keep it.
             </p>
             <button className="button" onClick={openBooth}>
               Start the booth
@@ -253,7 +260,7 @@ export function Booth() {
 
           <div className="intro-strip" aria-hidden="true">
             <StripPreview options={sampleStrip} selectedKey={null} onSelect={() => {}} onChange={() => {}} />
-            <p className="intro-caption">An unexposed strip, pressed and waiting.</p>
+            <p className="intro-caption">A blank strip, pressed and waiting.</p>
           </div>
         </div>
       </div>
@@ -265,7 +272,7 @@ export function Booth() {
     return (
       <div className="booth shoot">
         <header className="bar">
-          <span className="mark">sunprint booth</span>
+          <span className="mark">{BOOTH_NAME}</span>
           <span className="bar-note">{filledShots.length} of 3 exposed</span>
         </header>
 
@@ -324,6 +331,10 @@ export function Booth() {
   if (phase === 'develop') {
     return (
       <div className="booth develop" onClick={() => setPhase('edit')}>
+        <header className="bar">
+          <span className="mark">{BOOTH_NAME}</span>
+        </header>
+
         <div className="slot-housing">
           <div className="slot-mouth" aria-hidden="true" />
           <div className="dropping">
@@ -337,6 +348,11 @@ export function Booth() {
 
   return (
     <div className="booth edit">
+      <header className="bar">
+        <span className="mark">{BOOTH_NAME}</span>
+        <span className="bar-note">three exposures · ready</span>
+      </header>
+
       <div className="edit-layout">
         <div className="strip-column">
           <StripPreview
@@ -381,9 +397,28 @@ export function Booth() {
 
           {tab === 'press' && (
             <>
+              <div className="arrangements">
+                <h3 className="group-name">arrangements</h3>
+                <div className="arrangement-row">
+                  {ARRANGEMENTS.map((arrangement) => (
+                    <button
+                      key={arrangement.id}
+                      className="button quiet small"
+                      onClick={() => {
+                        setPlaced(placeArrangement(arrangement))
+                        setSelectedSticker(null)
+                      }}
+                    >
+                      {arrangement.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <StickerTray stickers={stickerKinds} onPick={addSticker} />
               <p className="hint">
-                Drag to move it. Tap one, then pull the ⤡ corner to resize and turn, or × to lift it off.
+                Drag to move it. Tap one, then pull the corner handle to resize and turn, or the cross
+                to lift it off.
               </p>
               {placed.length > 0 && (
                 <button className="button quiet small" onClick={() => setPlaced([])}>
@@ -441,7 +476,6 @@ export function Booth() {
               Start over
             </button>
           </div>
-          <p className="panel-foot">{PARTY_NAME} · {PARTY_YEAR}</p>
         </div>
       </div>
     </div>

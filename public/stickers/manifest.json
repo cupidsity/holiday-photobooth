@@ -239,66 +239,6 @@
       "name": "bunny",
       "group": "pressed",
       "src": "/stickers/bunny.svg"
-    },
-    {
-      "id": "word-merry",
-      "name": "merry",
-      "group": "words",
-      "text": "merry"
-    },
-    {
-      "id": "word-xoxo",
-      "name": "xoxo",
-      "group": "words",
-      "text": "xoxo"
-    },
-    {
-      "id": "word-so-cozy",
-      "name": "so cozy",
-      "group": "words",
-      "text": "so cozy"
-    },
-    {
-      "id": "word-let-it-snow",
-      "name": "let it snow",
-      "group": "words",
-      "text": "let it snow"
-    },
-    {
-      "id": "word-cheers",
-      "name": "cheers",
-      "group": "words",
-      "text": "cheers"
-    },
-    {
-      "id": "word-be-mine",
-      "name": "be mine",
-      "group": "words",
-      "text": "be mine"
-    },
-    {
-      "id": "word-darling",
-      "name": "darling",
-      "group": "words",
-      "text": "darling"
-    },
-    {
-      "id": "word-midwinter",
-      "name": "midwinter",
-      "group": "words",
-      "text": "midwinter"
-    },
-    {
-      "id": "word-hello-winter",
-      "name": "hello winter",
-      "group": "words",
-      "text": "hello winter"
-    },
-    {
-      "id": "word-forever",
-      "name": "forever",
-      "group": "words",
-      "text": "forever"
     }
   ]
 }
