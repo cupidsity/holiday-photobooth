@@ -1,0 +1,90 @@
+.invite {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(12px, 2.4vmin, 40px);
+  background:
+    radial-gradient(900px 600px at 50% 0%, #22452f 0%, rgba(34, 69, 47, 0) 70%),
+    linear-gradient(180deg, #12241b, #0b1711);
+}
+
+.invite-card {
+  width: min(100%, 92vmin);
+  height: min(100%, 96dvh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(6px, 1.2vmin, 18px);
+  padding: clamp(14px, 3vmin, 40px);
+  border-radius: clamp(14px, 2vmin, 28px);
+  background: #f4ead7;
+  color: #12241b;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(18, 36, 27, 0.12);
+  cursor: pointer;
+}
+
+.invite-head {
+  text-align: center;
+}
+
+.invite-kicker {
+  margin: 0;
+  font-size: clamp(10px, 1.5vmin, 16px);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: rgba(18, 36, 27, 0.55);
+}
+
+.invite-title {
+  margin: 0.1em 0 0;
+  font-family: Caveat, cursive;
+  font-size: clamp(30px, 7vmin, 86px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.invite-title em {
+  font-style: normal;
+  color: #a8102a;
+}
+
+.invite-canvas {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: block;
+}
+
+.invite-foot {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.invite-hint {
+  margin: 0;
+  font-size: clamp(12px, 2.1vmin, 24px);
+  letter-spacing: 0.1em;
+  color: rgba(18, 36, 27, 0.7);
+  transition: color 0.4s ease;
+}
+
+.invite-hint.code {
+  color: #a8102a;
+  font-weight: 600;
+}
+
+.invite-url {
+  margin: 0;
+  font-size: clamp(11px, 1.7vmin, 20px);
+  letter-spacing: 0.08em;
+  color: rgba(18, 36, 27, 0.5);
+}
+
+.invite-year {
+  margin: 0;
+  font-family: Caveat, cursive;
+  font-size: clamp(16px, 2.6vmin, 30px);
+  color: rgba(18, 36, 27, 0.45);
+}
