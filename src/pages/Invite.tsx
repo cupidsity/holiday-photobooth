@@ -34,13 +34,7 @@ function packedToCss(packed: number): string {
 
 export function Invite() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const dragRef = useRef<{
-    pointerId: number
-    lastX: number
-    lastY: number
-    lastTime: number
-    travel: number
-  } | null>(null)
+  const dragRef = useRef<{ pointerId: number; lastX: number; lastY: number; lastTime: number } | null>(null)
   const angleRef = useRef(0.34)
   const pitchRef = useRef(0)
   const velocityRef = useRef(0)
@@ -108,28 +102,54 @@ export function Invite() {
       const delta = Math.min(0.05, (now - previous) / 1000)
       previous = now
 
-      if (!reducedMotion) {
-        if (dragRef.current) {
-          // while a finger is down the drag owns the rotation
-        } else if (spinRef.current) {
-          velocityRef.current += (AUTO_SPIN - velocityRef.current) * Math.min(1, delta * 1.6)
-        } else {
-          // let a flick run on and die away instead of stopping dead
-          velocityRef.current *= Math.pow(0.12, delta)
-        }
+      // the tree holds still under a finger and picks its spin back up the
+      // moment it is let go
+      if (!reducedMotion && !dragRef.current) {
+        const wanted = spinRef.current ? AUTO_SPIN : 0
+        velocityRef.current += (wanted - velocityRef.current) * Math.min(1, delta * 2.2)
         angleRef.current += velocityRef.current * delta
       }
 
       ctx.fillStyle = PALETTE.night
       ctx.fillRect(0, 0, width, height)
 
-      // the tree is taller than its own height: the star sits above the cone and
-      // the parcels sit below it, and perspective magnifies whatever is nearest.
-      // fit all of that, or the foot of the tree runs off the bottom
-      const scale = Math.min(width / 1320, height / 1380)
+      // fit the whole model, star and parcels included. perspective magnifies
+      // whatever is nearest the eye and the amount it magnifies by depends on
+      // the scale, so the fit settles over a few passes
+      const span = tree.bottomY - tree.topY
+      let scale = Math.min((width * 0.94) / (tree.reach * 2), (height * 0.94) / span)
+      let nearest = 1
+      for (let pass = 0; pass < 4; pass += 1) {
+        nearest = FOCAL / (FOCAL - tree.reach * scale)
+        scale = Math.min(
+          (width * 0.94) / (tree.reach * 2 * nearest),
+          (height * 0.94) / (span * nearest),
+        )
+      }
       const centerX = width / 2
-      const centerY = height * 0.52
+      const centerY = height / 2 - ((tree.topY + tree.bottomY) / 2) * scale * nearest
       const reveal = clamp((now - revealFromRef.current) / REVEAL_MS, 0, 1)
+
+      rasterise(
+        tree,
+        {
+          columns,
+          rows,
+          cellWidth,
+          cellHeight,
+          angle: angleRef.current,
+          pitch: pitchRef.current,
+          reveal,
+          scale,
+          centerX,
+          centerY,
+          focal: FOCAL,
+          time: now,
+        },
+        depthBuffer,
+        glyphBuffer,
+        colorBuffer,
+      )
 
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -170,6 +190,8 @@ export function Invite() {
         for (const mark of star.trail) {
           const age = seconds - mark.litAt
           if (age > SHOOTING_LIFE) continue
+          if (mark.column < 0 || mark.column >= columns || mark.row < 0 || mark.row >= rows) continue
+          if (glyphBuffer[mark.row * columns + mark.column] > 0) continue
           const heat = 1 - age / SHOOTING_LIFE
           ctx.globalAlpha = heat * reveal
           ctx.fillStyle = heat > 0.82 ? '#ffffff' : PALETTE.snow
@@ -184,27 +206,6 @@ export function Invite() {
         ctx.globalAlpha = 0.25 + flake.size * 0.2
         ctx.fillText(flake.size > 1.4 ? '*' : '·', driftX * width, flake.y * height)
       }
-
-      rasterise(
-        tree,
-        {
-          columns,
-          rows,
-          cellWidth,
-          cellHeight,
-          angle: angleRef.current,
-          pitch: pitchRef.current,
-          reveal,
-          scale,
-          centerX,
-          centerY,
-          focal: FOCAL,
-          time: now,
-        },
-        depthBuffer,
-        glyphBuffer,
-        colorBuffer,
-      )
 
       ctx.globalAlpha = 1
       for (let row = 0; row < rows; row += 1) {
@@ -251,7 +252,6 @@ export function Invite() {
       lastX: event.clientX,
       lastY: event.clientY,
       lastTime: performance.now(),
-      travel: 0,
     }
     ;(event.target as Element).setPointerCapture?.(event.pointerId)
   }
@@ -266,24 +266,14 @@ export function Invite() {
     pitchRef.current = clamp(pitchRef.current + down * 0.004, PITCH_LOW, PITCH_HIGH)
     const elapsed = Math.max(1, now - drag.lastTime)
     velocityRef.current = clamp((across * 0.009 * 1000) / elapsed, -5, 5)
-    drag.travel += Math.abs(across) + Math.abs(down)
     drag.lastX = event.clientX
     drag.lastY = event.clientY
     drag.lastTime = now
   }
 
   function endDrag(event: ReactPointerEvent) {
-    const drag = dragRef.current
-    if (drag?.pointerId !== event.pointerId) return
+    if (dragRef.current?.pointerId !== event.pointerId) return
     dragRef.current = null
-    if (drag.travel < 6) {
-      // a tap with no drag in it means hold it there, or let it go again
-      velocityRef.current = 0
-      spinRef.current = !spinRef.current
-      return
-    }
-    // a drag hands the tree to its own momentum rather than back to the clock
-    spinRef.current = false
   }
 
   return (

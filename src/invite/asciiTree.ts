@@ -86,6 +86,11 @@ export type TreeModel = {
   // the star is a flat shape, so it is drawn as a billboard around this point
   // rather than turned with the tree, or it goes edge on twice a revolution
   starAnchorY: number
+  // the real bounds of everything, so the view can be fitted to the tree rather
+  // than to a guess at how tall it is
+  topY: number
+  bottomY: number
+  reach: number
 }
 
 export function buildTree(height: number, density = 1): TreeModel {
@@ -327,7 +332,26 @@ export function buildTree(height: number, density = 1): TreeModel {
     }
   }
 
-  return { samples, height, radius: baseRadius, lightCount, starAnchorY: starTop }
+  let topY = Infinity
+  let bottomY = -Infinity
+  let reach = 0
+  for (const sample of samples) {
+    if (sample.y < topY) topY = sample.y
+    if (sample.y > bottomY) bottomY = sample.y
+    const radial = Math.hypot(sample.x, sample.z)
+    if (radial > reach) reach = radial
+  }
+
+  return {
+    samples,
+    height,
+    radius: baseRadius,
+    lightCount,
+    starAnchorY: starTop,
+    topY,
+    bottomY,
+    reach,
+  }
 }
 
 const LIGHT_DIR = (() => {
