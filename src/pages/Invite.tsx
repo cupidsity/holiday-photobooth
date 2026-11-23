@@ -61,7 +61,7 @@ export function Invite() {
       TREE_HEIGHT,
       lightweight ? 0.62 : 1,
       portrait ? 0.62 : 1,
-      portrait ? 0.34 : 0.46,
+      portrait ? 0.41 : 0.46,
     )
     const snow = buildSnow(lightweight ? 70 : 150)
     const field = buildField(lightweight ? 260 : 620)
