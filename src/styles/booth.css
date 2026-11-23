@@ -453,6 +453,12 @@
 
 /* the editor */
 
+/* the grab bar between the strip and the panel, which only has a job on a
+   phone where the two share one screen */
+.split-handle {
+  display: none;
+}
+
 .edit-layout {
   display: flex;
   flex-direction: column;
@@ -743,11 +749,28 @@
   color: var(--ink);
 }
 
+/* a guest with reduce motion on still gets the print, without the tumble: the
+   strip slides straight out and develops, over a shorter beat */
 @media (prefers-reduced-motion: reduce) {
-  .dropping .strip-surface,
-  .dropping::after,
+  .dropping .strip-surface {
+    animation: drop-plain 0.9s ease-out both;
+  }
+
+  .dropping::after {
+    animation-duration: 2.4s;
+  }
+
   .countdown {
     animation-duration: 0.01ms;
+  }
+}
+
+@keyframes drop-plain {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }
 
@@ -793,8 +816,33 @@
     gap: 12px;
   }
 
+  .split-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 100%;
+    height: 24px;
+    margin: -10px 0;
+    cursor: ns-resize;
+    touch-action: none;
+  }
+
+  .split-handle::before {
+    content: '';
+    width: 54px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(22, 65, 42, 0.26);
+  }
+
+  .split-handle:active::before {
+    background: var(--forest);
+  }
+
+  /* the share is whatever the guest has dragged the bar to */
   .booth.edit .strip-surface {
-    width: min(52vw, calc((100dvh - 486px) / 3));
+    width: min(86vw, calc((100dvh - 486px) / 3 * var(--strip-share, 1)));
   }
 
   .booth.edit .panel {
@@ -807,8 +855,9 @@
      saving the strip is never behind a scroll */
   .booth.edit .panel-body {
     flex: 1;
-    /* a floor, so the tab's controls are never squeezed out by the buttons */
-    min-height: 152px;
+    /* a floor, so the tab's controls are never squeezed out by the buttons;
+       low enough that a guest can drag the strip up to most of the screen */
+    min-height: 104px;
     overflow-y: auto;
   }
 

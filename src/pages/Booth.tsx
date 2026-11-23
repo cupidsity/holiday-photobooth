@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { CSSProperties, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CameraStage } from '../booth/CameraStage'
 import { Dial, FilterTray, FrameTray, StickerTray } from '../booth/Trays'
 import { StripPreview } from '../booth/StripPreview'
@@ -28,6 +28,11 @@ function todayLabel(): string {
   return new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+// the slice of the open tray that stays usable while the strip grows, and the
+// panel's own padding and gaps around it
+const TRAY_FLOOR = 104
+const PANEL_CHROME = 74
+
 export function Booth() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const camera = useCamera(videoRef)
@@ -48,6 +53,50 @@ export function Booth() {
   const [subcaption, setSubcaption] = useState(todayLabel())
   const [placed, setPlaced] = useState<PlacedSticker[]>([])
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null)
+  // on a phone the strip and the panel share one screen, so the guest can drag
+  // the bar between them to get a bigger strip while placing stickers
+  const [stripShare, setStripShare] = useState(1)
+  const stripColumnRef = useRef<HTMLDivElement | null>(null)
+  const layoutRef = useRef<HTMLDivElement | null>(null)
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const resizeRef = useRef<{
+    pointerId: number
+    startY: number
+    startHeight: number
+    startShare: number
+    room: number
+  } | null>(null)
+
+  const startResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const column = stripColumnRef.current
+    const layout = layoutRef.current
+    const panel = panelRef.current
+    if (!column || !layout || !panel) return
+    // the panel's own parts say how much it needs: its tabs, a usable slice of
+    // whichever tray is open, and the buttons, none of which may be pushed off
+    // the bottom of the screen
+    const heightOf = (selector: string) => panel.querySelector(selector)?.getBoundingClientRect().height ?? 0
+    const needs = heightOf('.tabs') + heightOf('.actions') + TRAY_FLOOR + PANEL_CHROME
+    resizeRef.current = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      startHeight: column.getBoundingClientRect().height,
+      startShare: stripShare,
+      room: layout.getBoundingClientRect().height - needs,
+    }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+  }
+
+  const moveResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const resize = resizeRef.current
+    if (!resize || resize.pointerId !== event.pointerId || resize.startHeight <= 0) return
+    const wanted = Math.min(resize.room, resize.startHeight + (event.clientY - resize.startY))
+    setStripShare(Math.max(0.6, (resize.startShare * wanted) / resize.startHeight))
+  }
+
+  const endResize = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (resizeRef.current?.pointerId === event.pointerId) resizeRef.current = null
+  }
   const [mirrored, setMirrored] = useState(true)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [flashing, setFlashing] = useState(false)
@@ -358,8 +407,8 @@ export function Booth() {
         <span className="bar-note">{STRIP.photoCount} exposures · ready</span>
       </header>
 
-      <div className="edit-layout">
-        <div className="strip-column">
+      <div className="edit-layout" ref={layoutRef} style={{ '--strip-share': stripShare } as CSSProperties}>
+        <div className="strip-column" ref={stripColumnRef}>
           <StripPreview
             options={stripOptions}
             selectedKey={selectedSticker}
@@ -368,7 +417,18 @@ export function Booth() {
           />
         </div>
 
-        <div className="panel">
+        <div
+          className="split-handle"
+          role="separator"
+          aria-label="drag to resize the strip"
+          onPointerDown={startResize}
+          onPointerMove={moveResize}
+          onPointerUp={endResize}
+          onPointerCancel={endResize}
+          onDoubleClick={() => setStripShare(1)}
+        />
+
+        <div className="panel" ref={panelRef}>
           <div className="tabs">
             {(['look', 'press', 'words', 'paper'] as Tab[]).map((name) => (
               <button key={name} className={`tab${tab === name ? ' active' : ''}`} onClick={() => setTab(name)}>

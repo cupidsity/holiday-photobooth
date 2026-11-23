@@ -191,8 +191,10 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
 
       // the tree holds still under a finger and picks its spin back up the
       // moment it is let go
-      if (!reducedMotion && !dragRef.current && folding === 0) {
-        const wanted = spinRef.current ? AUTO_SPIN : 0
+      // the tree is the content here rather than decoration around it, so
+      // reduce motion slows the turn instead of stopping it dead
+      if (!dragRef.current && folding === 0) {
+        const wanted = spinRef.current ? (reducedMotion ? AUTO_SPIN * 0.4 : AUTO_SPIN) : 0
         velocityRef.current += (wanted - velocityRef.current) * Math.min(1, delta * 2.2)
         angleRef.current += velocityRef.current * delta
       }
