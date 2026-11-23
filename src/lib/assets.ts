@@ -5,7 +5,8 @@ export type Frame = {
   // and paper means no art at all
   kind: 'strip' | 'photo' | 'paper'
   src?: string
-  background: string
+  // null leaves the strip unpainted, so it is exactly the shape of the art
+  background: string | null
   ink: string
   // where the art sits in its own file: drawn frames are exported with padding
   // round them, so the strip crops to the art
@@ -77,7 +78,7 @@ export async function loadFrames(): Promise<Frame[]> {
       name: frame.name ?? frame.id,
       kind: frame.kind === 'photo' ? ('photo' as const) : ('strip' as const),
       src: frame.src,
-      background: frame.background ?? '#f6efe2',
+      background: frame.background === null ? null : (frame.background ?? '#f6efe2'),
       ink: frame.ink ?? '#1d3b2a',
       art: frame.art,
       // the manifest measures everything in the artwork's own file, so it is

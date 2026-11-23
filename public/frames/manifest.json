@@ -5,7 +5,7 @@
       "name": "candy cane",
       "kind": "strip",
       "src": "/frames/candy-cane.png",
-      "background": "#fdc4b5",
+      "background": null,
       "ink": "#7d1222",
       "art": {
         "left": 170,
@@ -51,7 +51,7 @@
       "name": "snowfall",
       "kind": "strip",
       "src": "/frames/snowfall.png",
-      "background": "#9e81bd",
+      "background": null,
       "ink": "#4a3566",
       "art": {
         "left": 160,
@@ -97,7 +97,7 @@
       "name": "gingerbread",
       "kind": "strip",
       "src": "/frames/gingerbread.png",
-      "background": "#f28a46",
+      "background": null,
       "ink": "#6b3410",
       "art": {
         "left": 170,

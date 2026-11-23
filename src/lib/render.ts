@@ -189,10 +189,12 @@ export async function renderStripBase(
   const nativeFilter = supportsCanvasFilter()
 
   const height = stripHeight(frame.art)
-  ctx.save()
-  ctx.fillStyle = frame.background
-  ctx.fillRect(0, 0, STRIP.width, height)
-  ctx.restore()
+  if (frame.background) {
+    ctx.save()
+    ctx.fillStyle = frame.background
+    ctx.fillRect(0, 0, STRIP.width, height)
+    ctx.restore()
+  }
 
   for (let index = 0; index < STRIP.photoCount; index += 1) {
     const shot = shots[index]
