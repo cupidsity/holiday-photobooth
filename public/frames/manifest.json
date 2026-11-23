@@ -9,9 +9,9 @@
       "ink": "#7d1222",
       "art": {
         "left": 170,
-        "top": 50,
+        "top": 130,
         "width": 660,
-        "height": 1710,
+        "height": 1630,
         "source": {
           "width": 1000,
           "height": 1800
@@ -54,10 +54,10 @@
       "background": null,
       "ink": "#4a3566",
       "art": {
-        "left": 160,
-        "top": 30,
-        "width": 680,
-        "height": 1730,
+        "left": 170,
+        "top": 120,
+        "width": 660,
+        "height": 1640,
         "source": {
           "width": 1000,
           "height": 1800
@@ -100,10 +100,10 @@
       "background": null,
       "ink": "#6b3410",
       "art": {
-        "left": 170,
-        "top": 0,
-        "width": 660,
-        "height": 1770,
+        "left": 180,
+        "top": 130,
+        "width": 640,
+        "height": 1630,
         "source": {
           "width": 1000,
           "height": 1800
