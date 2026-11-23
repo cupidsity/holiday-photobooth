@@ -10,8 +10,9 @@ export function App() {
   const [settled, setSettled] = useState(false)
 
   function openBooth() {
-    setOpening(true)
-    window.setTimeout(() => setSettled(true), 520)
+    // the finished strip holds for a beat, then the booth comes up over it
+    window.setTimeout(() => setOpening(true), 260)
+    window.setTimeout(() => setSettled(true), 980)
   }
 
   return (

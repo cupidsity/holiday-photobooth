@@ -19,15 +19,34 @@ const FOCAL = 900
 // how long the tree takes to grow in when the screen is first opened
 const REVEAL_MS = 3200
 const AUTO_SPIN = 0.32
-// the flash: blow-out, white, gone
-const FLASH_MS = 950
+// how long the tree takes to pack itself into a strip
+const FOLD_MS = 1300
+// the strip's own paper and ink, so what the characters settle into matches the
+// strip waiting on the booth screen
+const STRIP_PAPER = '#16412a'
+const STRIP_INK = '#eef3e9'
+// the night warms toward the strip's paper as the fold runs, so the strip is
+// arriving in its own light rather than sitting on a black field
+const FOLD_FIELD = '#0d2718'
 // the view tips up over the tree but never under it: from below the cone turns
 // inside out and the whole thing stops reading as a tree
 const PITCH_LOW = 0
 const PITCH_HIGH = 1.1
 
+function easeInOut(progress: number): number {
+  return progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2
+}
+
 function clamp(value: number, low: number, high: number): number {
   return value < low ? low : value > high ? high : value
+}
+
+function mixHex(from: string, to: string, amount: number): string {
+  const read = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16))
+  const [fromRed, fromGreen, fromBlue] = read(from)
+  const [toRed, toGreen, toBlue] = read(to)
+  const blend = (left: number, right: number) => Math.round(left + (right - left) * amount)
+  return `rgb(${blend(fromRed, toRed)}, ${blend(fromGreen, toGreen)}, ${blend(fromBlue, toBlue)})`
 }
 
 function packedToCss(packed: number): string {
@@ -57,9 +76,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
   const velocityRef = useRef(0)
   const spinRef = useRef(true)
   const revealFromRef = useRef(performance.now())
-  const flashFromRef = useRef<number | null>(null)
-  // where the finger landed, in canvas pixels: the blow-out starts there
-  const flashAtRef = useRef({ x: 0, y: 0 })
+  const foldFromRef = useRef<number | null>(null)
   const leavingRef = useRef(false)
   // held in a ref so the render loop never has to be torn down and rebuilt
   const enterRef = useRef(onEnter)
@@ -157,23 +174,20 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       const delta = Math.min(0.05, (now - previous) / 1000)
       previous = now
 
-      const flashFrom = flashFromRef.current
-      const flash = flashFrom === null ? 0 : clamp((now - flashFrom) / FLASH_MS, 0, 1)
-      // the blow-out races out from the tap, then the whole sheet goes white
-      const blowOut = clamp(flash / 0.4, 0, 1)
-      const reach = (1 - (1 - blowOut) ** 2) * Math.hypot(width, height) * 1.15
-      const wash = clamp((flash - 0.34) / 0.24, 0, 1)
-      const standing = 1
+      const foldFrom = foldFromRef.current
+      const folding = foldFrom === null ? 0 : clamp((now - foldFrom) / FOLD_MS, 0, 1)
+      const fold = easeInOut(folding)
+      const standing = 1 - fold
 
       // the tree holds still under a finger and picks its spin back up the
       // moment it is let go
-      if (!reducedMotion && !dragRef.current && flash === 0) {
+      if (!reducedMotion && !dragRef.current && folding === 0) {
         const wanted = spinRef.current ? AUTO_SPIN : 0
         velocityRef.current += (wanted - velocityRef.current) * Math.min(1, delta * 2.2)
         angleRef.current += velocityRef.current * delta
       }
 
-      ctx.fillStyle = PALETTE.night
+      ctx.fillStyle = fold > 0 ? mixHex(PALETTE.night, FOLD_FIELD, fold) : PALETTE.night
       ctx.fillRect(0, 0, width, height)
 
       const centerX = width / 2
@@ -257,43 +271,106 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       }
 
       ctx.globalAlpha = 1
-      for (let row = 0; row < rows; row += 1) {
-        for (let column = 0; column < columns; column += 1) {
-          const index = row * columns + column
-          const code = glyphBuffer[index]
-          if (code <= 0) continue
 
-          const atX = column * cellWidth
-          const atY = row * cellHeight
-
-          if (flash === 0) {
-            ctx.globalAlpha = 1
+      if (folding === 0) {
+        for (let row = 0; row < rows; row += 1) {
+          for (let column = 0; column < columns; column += 1) {
+            const index = row * columns + column
+            const code = glyphBuffer[index]
+            if (code <= 0) continue
             ctx.fillStyle = packedToCss(colorBuffer[index])
-            ctx.fillText(glyphAt(code), atX, atY)
-            continue
+            ctx.fillText(glyphAt(code), column * cellWidth, row * cellHeight)
           }
-
-          // everything the blow-out has reached burns out: the character
-          // thickens to a solid and the light takes its colour
-          const away = Math.hypot(atX - flashAtRef.current.x, atY - flashAtRef.current.y)
-          const burn = clamp((reach - away) / (cellHeight * 26), 0, 1)
-          ctx.globalAlpha = 1
-          ctx.fillStyle =
-            burn > 0 ? mixPacked(colorBuffer[index], '#ffffff', burn) : packedToCss(colorBuffer[index])
-          ctx.fillText(burn > 0.55 ? '@' : burn > 0.22 ? '%' : glyphAt(code), atX, atY)
         }
-      }
+      } else {
+        // the strip the tree is packing itself into: 2x6 proportions, three
+        // windows and a caption band, the same shape the booth prints
+        const paperWidth = Math.min(width * 0.2, height * 0.3)
+        const paperHeight = paperWidth * 3
+        const paperLeft = centerX - paperWidth / 2
+        const paperTop = centerY - paperHeight / 2
+        const inset = paperWidth * 0.09
+        const windowWidth = paperWidth - inset * 2
+        const windowHeight = (paperHeight * 0.74) / 3
+        const windowGap = paperHeight * 0.025
+        const firstWindow = paperTop + paperHeight * 0.05
+        const insideWindow = (x: number, y: number) => {
+          if (x < paperLeft + inset || x > paperLeft + inset + windowWidth) return false
+          for (let slot = 0; slot < 3; slot += 1) {
+            const top = firstWindow + slot * (windowHeight + windowGap)
+            if (y >= top && y <= top + windowHeight) return true
+          }
+          return false
+        }
 
-      if (wash > 0) {
-        ctx.globalAlpha = wash
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, width, height)
+        ctx.globalAlpha = fold
+        ctx.fillStyle = STRIP_PAPER
+        ctx.fillRect(paperLeft, paperTop, paperWidth, paperHeight)
+        ctx.fillStyle = '#0e2d1c'
+        for (let slot = 0; slot < 3; slot += 1) {
+          ctx.fillRect(
+            paperLeft + inset,
+            firstWindow + slot * (windowHeight + windowGap),
+            windowWidth,
+            windowHeight,
+          )
+        }
+        ctx.globalAlpha = 1
+
+        // the places on the strip that characters can land: the paper, not
+        // the windows. mapping the tree straight onto the strip instead piles
+        // everything into the bottom, because that is where a cone's
+        // characters are
+        const paperColumns = Math.ceil(paperWidth / cellWidth)
+        const paperRows = Math.ceil(paperHeight / cellHeight)
+        const landings: number[] = []
+        for (let row = 0; row < paperRows; row += 1) {
+          for (let column = 0; column < paperColumns; column += 1) {
+            const spotX = paperLeft + column * cellWidth
+            const spotY = paperTop + row * cellHeight
+            if (insideWindow(spotX, spotY)) continue
+            landings.push(spotX, spotY)
+          }
+        }
+        const landingCount = landings.length / 2
+
+        let standingCount = 0
+        for (let index = 0; index < rows * columns; index += 1) {
+          if (glyphBuffer[index] > 0) standingCount += 1
+        }
+
+        // both lists run top-left to bottom-right, so the mapping is in order
+        // and nothing has to cross the strip to find its place
+        let taken = 0
+        for (let row = 0; row < rows; row += 1) {
+          for (let column = 0; column < columns; column += 1) {
+            const index = row * columns + column
+            const code = glyphBuffer[index]
+            if (code <= 0) continue
+
+            const slot = Math.min(
+              landingCount - 1,
+              Math.floor((taken * landingCount) / Math.max(1, standingCount)),
+            )
+            taken += 1
+            const landedX = landings[slot * 2]
+            const landedY = landings[slot * 2 + 1]
+            const x = column * cellWidth + (landedX - column * cellWidth) * fold
+            const y = row * cellHeight + (landedY - row * cellHeight) * fold
+
+            ctx.globalAlpha = 1
+            // the characters take the strip's ink before they land, so what
+            // settles is already the strip's own colour
+            ctx.fillStyle = mixPacked(colorBuffer[index], STRIP_INK, clamp(fold * 1.35, 0, 1))
+            ctx.fillText(glyphAt(code), x, y)
+          }
+        }
         ctx.globalAlpha = 1
       }
 
-      // the booth comes up while the glare is still on the screen, so there is
-      // never a frame of nothing between the two
-      if (flash >= 0.55 && !leavingRef.current) {
+      // the strip is allowed to finish and stand for a moment before the booth
+      // comes up over it
+      if (folding >= 1 && !leavingRef.current) {
         leavingRef.current = true
         enterRef.current()
       }
@@ -327,7 +404,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
   }, [])
 
   function startDrag(event: ReactPointerEvent) {
-    if (flashFromRef.current !== null) return
+    if (foldFromRef.current !== null) return
     dragRef.current = {
       pointerId: event.pointerId,
       lastX: event.clientX,
@@ -358,14 +435,9 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
     const drag = dragRef.current
     if (drag?.pointerId !== event.pointerId) return
     dragRef.current = null
-    // a tap rather than a turn: fire the flash and open the booth
-    if (drag.travel < 6 && flashFromRef.current === null) {
-      const bounds = canvasRef.current?.getBoundingClientRect()
-      flashAtRef.current = {
-        x: event.clientX - (bounds?.left ?? 0),
-        y: event.clientY - (bounds?.top ?? 0),
-      }
-      flashFromRef.current = performance.now()
+    // a tap rather than a turn: pack the tree into a strip and open the booth
+    if (drag.travel < 6 && foldFromRef.current === null) {
+      foldFromRef.current = performance.now()
       setLeaving(true)
     }
   }

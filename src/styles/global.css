@@ -146,7 +146,7 @@ button {
 /* the booth comes up through the dark the tree left behind */
 .booth-layer {
   background: var(--ground);
-  animation: lights-up 460ms ease both;
+  animation: lights-up 620ms ease both;
 }
 
 @keyframes lights-up {
