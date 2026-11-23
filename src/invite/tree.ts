@@ -7,17 +7,19 @@ export type TreeCell = {
   kind: TreeKind
 }
 
+// the invite is the negative of the strips the booth prints: prussian ink on
+// pale paper, which is also the only way round a phone will read the code
 export const INK = {
-  needle: '#1d5c38',
-  needleDeep: '#14402a',
-  ornamentRed: '#a8102a',
-  ornamentGold: '#8a6212',
-  trunk: '#573316',
-  star: '#8a6212',
-  snow: '#46606b',
+  needle: '#1b4f8f',
+  needleDeep: '#123a6e',
+  ornamentRed: '#2f6fb5',
+  ornamentGold: '#0d2a52',
+  trunk: '#15314f',
+  star: '#2f6fb5',
+  snow: '#86a8ca',
   // everything collapses to this when the view swings overhead, so the code
-  // reads as near-black on cream for the scanner
-  code: '#101d14',
+  // reads as near-black on pale for the scanner
+  code: '#0c2446',
 } as const
 
 const NEEDLES = ['*', '*', '*', '^', '^', '+', '~']

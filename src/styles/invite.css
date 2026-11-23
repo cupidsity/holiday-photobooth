@@ -3,9 +3,7 @@
   display: grid;
   place-items: center;
   padding: clamp(12px, 2.4vmin, 40px);
-  background:
-    radial-gradient(900px 600px at 50% 0%, #22452f 0%, rgba(34, 69, 47, 0) 70%),
-    linear-gradient(180deg, #12241b, #0b1711);
+  background: #0a1c38;
 }
 
 .invite-card {
@@ -14,12 +12,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(6px, 1.2vmin, 18px);
-  padding: clamp(14px, 3vmin, 40px);
-  border-radius: clamp(14px, 2vmin, 28px);
-  background: #f4ead7;
-  color: #12241b;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(18, 36, 27, 0.12);
+  gap: clamp(6px, 1.4vmin, 20px);
+  padding: clamp(16px, 3vmin, 44px);
+  background: #edf3fa;
+  color: #0c2446;
   cursor: pointer;
 }
 
@@ -27,25 +23,19 @@
   text-align: center;
 }
 
-.invite-kicker {
-  margin: 0;
-  font-size: clamp(10px, 1.5vmin, 16px);
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  color: rgba(18, 36, 27, 0.55);
-}
-
 .invite-title {
-  margin: 0.1em 0 0;
-  font-family: Caveat, cursive;
-  font-size: clamp(30px, 7vmin, 86px);
-  font-weight: 700;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(28px, 6.4vmin, 76px);
+  font-weight: 400;
   line-height: 1;
+  letter-spacing: -0.01em;
 }
 
-.invite-title em {
-  font-style: normal;
-  color: #a8102a;
+.invite-lead {
+  margin: 0.5em 0 0;
+  font-size: clamp(12px, 1.9vmin, 22px);
+  color: #2d4c74;
 }
 
 .invite-canvas {
@@ -59,32 +49,22 @@
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 0.3em;
+  gap: 0.35em;
 }
 
 .invite-hint {
   margin: 0;
-  font-size: clamp(12px, 2.1vmin, 24px);
-  letter-spacing: 0.1em;
-  color: rgba(18, 36, 27, 0.7);
-  transition: color 0.4s ease;
+  font-size: clamp(12px, 2vmin, 24px);
+  color: #2d4c74;
 }
 
 .invite-hint.code {
-  color: #a8102a;
-  font-weight: 600;
+  color: #123a6e;
+  font-weight: 500;
 }
 
 .invite-url {
   margin: 0;
-  font-size: clamp(11px, 1.7vmin, 20px);
-  letter-spacing: 0.08em;
-  color: rgba(18, 36, 27, 0.5);
-}
-
-.invite-year {
-  margin: 0;
-  font-family: Caveat, cursive;
-  font-size: clamp(16px, 2.6vmin, 30px);
-  color: rgba(18, 36, 27, 0.45);
+  font-size: clamp(11px, 1.6vmin, 19px);
+  color: #5d7da5;
 }

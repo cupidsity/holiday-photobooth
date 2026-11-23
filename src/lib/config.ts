@@ -9,6 +9,8 @@ export function boothUrl(): string {
   return fromEnv || FALLBACK_BOOTH_URL
 }
 
-// printed on the strip footer and the invite screen
+// the name of the booth itself, on the invite and in the app chrome
+export const BOOTH_NAME = 'sunprint booth'
+// printed on the strip footer, and the line the invite leads with
 export const PARTY_NAME = 'holiday party'
 export const PARTY_YEAR = new Date().getFullYear()

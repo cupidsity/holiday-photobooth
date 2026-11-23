@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { buildScene } from '../invite/scene'
 import { INK } from '../invite/tree'
-import { PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
+import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
 import '../styles/invite.css'
 
-const PAPER = '#f4ead7'
+const PAPER = '#edf3fa'
 const QUIET_MODULES = 4
 
 // one full cycle of the invite, in milliseconds
@@ -173,20 +173,19 @@ export function Invite() {
     <div className="invite">
       <div className="invite-card" onClick={() => setLock((current) => (current === 'code' ? 'auto' : 'code'))}>
         <header className="invite-head">
-          <p className="invite-kicker">you are invited to the</p>
-          <h1 className="invite-title">
-            {PARTY_NAME} <em>photobooth</em>
-          </h1>
+          <h1 className="invite-title">{BOOTH_NAME}</h1>
+          <p className="invite-lead">
+            Three photographs, one blue strip. {PARTY_NAME}, {PARTY_YEAR}.
+          </p>
         </header>
 
         <canvas ref={canvasRef} className="invite-canvas" />
 
         <footer className="invite-foot">
           <p className={`invite-hint${showingCode ? ' code' : ''}`}>
-            {showingCode ? 'scan it — three photos, one strip' : 'watch the tree from above ↑'}
+            {showingCode ? 'Scan it to start your strip' : 'Watch the tree from above'}
           </p>
           <p className="invite-url">{url.replace(/^https?:\/\//, '')}</p>
-          <p className="invite-year">{PARTY_YEAR}</p>
         </footer>
       </div>
     </div>
