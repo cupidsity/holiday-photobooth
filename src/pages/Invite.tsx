@@ -19,8 +19,8 @@ const FOCAL = 900
 // how long the tree takes to grow in when the screen is first opened
 const REVEAL_MS = 3200
 const AUTO_SPIN = 0.32
-// how long the tree takes to come apart once it has been tapped
-const DISSOLVE_MS = 1400
+// the flash: blow-out, white, gone
+const FLASH_MS = 950
 // the view tips up over the tree but never under it: from below the cone turns
 // inside out and the whole thing stops reading as a tree
 const PITCH_LOW = 0
@@ -30,14 +30,17 @@ function clamp(value: number, low: number, high: number): number {
   return value < low ? low : value > high ? high : value
 }
 
-// a stable number per cell, so a glyph keeps its own moment and its own
-// direction for the whole dissolve instead of flickering
-function cellSeed(column: number, row: number): number {
-  return Math.abs(Math.sin(column * 12.9898 + row * 78.233) * 43758.5453) % 1
-}
-
 function packedToCss(packed: number): string {
   return `rgb(${(packed >> 16) & 255}, ${(packed >> 8) & 255}, ${packed & 255})`
+}
+
+// the same colour with the light taken out of it, for the blow-out
+function mixPacked(packed: number, to: string, amount: number): string {
+  const toRed = parseInt(to.slice(1, 3), 16)
+  const toGreen = parseInt(to.slice(3, 5), 16)
+  const toBlue = parseInt(to.slice(5, 7), 16)
+  const blend = (left: number, right: number) => Math.round(left + (right - left) * amount)
+  return `rgb(${blend((packed >> 16) & 255, toRed)}, ${blend((packed >> 8) & 255, toGreen)}, ${blend(packed & 255, toBlue)})`
 }
 
 export function Invite({ onEnter }: { onEnter: () => void }) {
@@ -54,7 +57,9 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
   const velocityRef = useRef(0)
   const spinRef = useRef(true)
   const revealFromRef = useRef(performance.now())
-  const dissolveFromRef = useRef<number | null>(null)
+  const flashFromRef = useRef<number | null>(null)
+  // where the finger landed, in canvas pixels: the blow-out starts there
+  const flashAtRef = useRef({ x: 0, y: 0 })
   const leavingRef = useRef(false)
   // held in a ref so the render loop never has to be torn down and rebuilt
   const enterRef = useRef(onEnter)
@@ -152,14 +157,17 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       const delta = Math.min(0.05, (now - previous) / 1000)
       previous = now
 
-      const dissolveFrom = dissolveFromRef.current
-      const dissolve =
-        dissolveFrom === null ? 0 : clamp((now - dissolveFrom) / DISSOLVE_MS, 0, 1)
-      const standing = 1 - dissolve * dissolve
+      const flashFrom = flashFromRef.current
+      const flash = flashFrom === null ? 0 : clamp((now - flashFrom) / FLASH_MS, 0, 1)
+      // the blow-out races out from the tap, then the whole sheet goes white
+      const blowOut = clamp(flash / 0.4, 0, 1)
+      const reach = (1 - (1 - blowOut) ** 2) * Math.hypot(width, height) * 1.15
+      const wash = clamp((flash - 0.34) / 0.24, 0, 1)
+      const standing = 1
 
       // the tree holds still under a finger and picks its spin back up the
       // moment it is let go
-      if (!reducedMotion && !dragRef.current && dissolve === 0) {
+      if (!reducedMotion && !dragRef.current && flash === 0) {
         const wanted = spinRef.current ? AUTO_SPIN : 0
         velocityRef.current += (wanted - velocityRef.current) * Math.min(1, delta * 2.2)
         angleRef.current += velocityRef.current * delta
@@ -255,33 +263,37 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
           const code = glyphBuffer[index]
           if (code <= 0) continue
 
-          if (dissolve === 0) {
+          const atX = column * cellWidth
+          const atY = row * cellHeight
+
+          if (flash === 0) {
             ctx.globalAlpha = 1
             ctx.fillStyle = packedToCss(colorBuffer[index])
-            ctx.fillText(glyphAt(code), column * cellWidth, row * cellHeight)
+            ctx.fillText(glyphAt(code), atX, atY)
             continue
           }
 
-          // a carriage runs down the page a row at a time, left to right, and
-          // every character it passes comes unstuck and falls off the bottom
-          const seed = cellSeed(column, row)
-          const cue = (row / rows) * 0.6 + (column / columns) * 0.07
-          const loose = clamp((dissolve - cue) / 0.4, 0, 1)
-          if (loose >= 1) continue
-          ctx.globalAlpha = 1 - loose * loose
-          ctx.fillStyle = packedToCss(colorBuffer[index])
-          ctx.fillText(
-            glyphAt(code),
-            column * cellWidth + (seed - 0.5) * loose * cellWidth * 2.4,
-            // squared, so they pick up speed on the way down
-            row * cellHeight + loose * loose * height * 1.6,
-          )
+          // everything the blow-out has reached burns out: the character
+          // thickens to a solid and the light takes its colour
+          const away = Math.hypot(atX - flashAtRef.current.x, atY - flashAtRef.current.y)
+          const burn = clamp((reach - away) / (cellHeight * 26), 0, 1)
+          ctx.globalAlpha = 1
+          ctx.fillStyle =
+            burn > 0 ? mixPacked(colorBuffer[index], '#ffffff', burn) : packedToCss(colorBuffer[index])
+          ctx.fillText(burn > 0.55 ? '@' : burn > 0.22 ? '%' : glyphAt(code), atX, atY)
         }
       }
 
-      // hand over before the last characters have finished falling, so the
-      // booth comes up through them rather than after a beat of empty sky
-      if (dissolve >= 0.72 && !leavingRef.current) {
+      if (wash > 0) {
+        ctx.globalAlpha = wash
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, width, height)
+        ctx.globalAlpha = 1
+      }
+
+      // the booth comes up while the glare is still on the screen, so there is
+      // never a frame of nothing between the two
+      if (flash >= 0.55 && !leavingRef.current) {
         leavingRef.current = true
         enterRef.current()
       }
@@ -315,7 +327,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
   }, [])
 
   function startDrag(event: ReactPointerEvent) {
-    if (dissolveFromRef.current !== null) return
+    if (flashFromRef.current !== null) return
     dragRef.current = {
       pointerId: event.pointerId,
       lastX: event.clientX,
@@ -346,9 +358,14 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
     const drag = dragRef.current
     if (drag?.pointerId !== event.pointerId) return
     dragRef.current = null
-    // a tap rather than a turn: take the tree apart and open the booth
-    if (drag.travel < 6 && dissolveFromRef.current === null) {
-      dissolveFromRef.current = performance.now()
+    // a tap rather than a turn: fire the flash and open the booth
+    if (drag.travel < 6 && flashFromRef.current === null) {
+      const bounds = canvasRef.current?.getBoundingClientRect()
+      flashAtRef.current = {
+        x: event.clientX - (bounds?.left ?? 0),
+        y: event.clientY - (bounds?.top ?? 0),
+      }
+      flashFromRef.current = performance.now()
       setLeaving(true)
     }
   }

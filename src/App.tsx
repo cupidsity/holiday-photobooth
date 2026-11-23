@@ -11,7 +11,7 @@ export function App() {
 
   function openBooth() {
     setOpening(true)
-    window.setTimeout(() => setSettled(true), 900)
+    window.setTimeout(() => setSettled(true), 520)
   }
 
   return (
