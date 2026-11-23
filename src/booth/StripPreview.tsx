@@ -1,5 +1,5 @@
 import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
-import { PlacedSticker, STICKER_FONT, StripOptions, ensureFonts, renderStripBase } from '../lib/render'
+import { PlacedSticker, StripOptions, WORD_HALO, WORD_STICKER_FONT, ensureFonts, renderStripBase } from '../lib/render'
 import { STRIP } from '../lib/strip'
 
 type Props = {
@@ -152,21 +152,20 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
         return (
           <div
             key={sticker.key}
-            className={`placed-sticker${selected ? ' selected' : ''}`}
+            className={`placed-sticker${selected ? ' selected' : ''}${sticker.text ? ' word' : ''}`}
             style={{
               left: `${sticker.x * 100}%`,
               top: `${sticker.y * 100}%`,
-              width: `${pixelSize}px`,
-              height: `${pixelSize}px`,
+              width: sticker.text ? undefined : `${pixelSize}px`,
+              height: sticker.text ? undefined : `${pixelSize}px`,
+              fontSize: sticker.text ? `${pixelSize}px` : undefined,
+              fontFamily: sticker.text ? WORD_STICKER_FONT : undefined,
+              WebkitTextStrokeWidth: sticker.text ? `${pixelSize * WORD_HALO}px` : undefined,
               transform: `translate(-50%, -50%) rotate(${sticker.rotation}rad)`,
             }}
             onPointerDown={(event) => beginDrag(event, sticker.key, 'move')}
           >
-            {sticker.src ? (
-              <img src={sticker.src} alt={sticker.stickerId} draggable={false} />
-            ) : (
-              <span style={{ fontSize: `${pixelSize}px`, fontFamily: STICKER_FONT }}>{sticker.glyph}</span>
-            )}
+            {sticker.text ? sticker.text : <img src={sticker.src} alt="" draggable={false} />}
 
             {selected && (
               <>

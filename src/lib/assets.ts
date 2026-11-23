@@ -9,35 +9,18 @@ export type Frame = {
   ink: string
 }
 
+// a sticker is either a piece of line art or a word set in the caption hand
 export type Sticker = {
   id: string
   name: string
-  // emoji stickers need no art files, image stickers come from public/stickers
-  glyph?: string
   src?: string
+  text?: string
 }
 
 export const PAPER_FRAMES: Frame[] = [
   { id: 'cream', name: 'cream paper', kind: 'paper', background: '#f6efe2', ink: '#1d3b2a' },
   { id: 'forest', name: 'forest', kind: 'paper', background: '#13301f', ink: '#f6efe2' },
   { id: 'cranberry', name: 'cranberry', kind: 'paper', background: '#7d1326', ink: '#ffe9d6' },
-]
-
-const EMOJI_STICKERS: Sticker[] = [
-  { id: 'tree', name: 'tree', glyph: '🎄' },
-  { id: 'santa', name: 'santa', glyph: '🎅' },
-  { id: 'snowflake', name: 'snowflake', glyph: '❄️' },
-  { id: 'gift', name: 'gift', glyph: '🎁' },
-  { id: 'star', name: 'star', glyph: '⭐' },
-  { id: 'candycane', name: 'candy cane', glyph: '🍬' },
-  { id: 'cocoa', name: 'cocoa', glyph: '☕' },
-  { id: 'bells', name: 'bells', glyph: '🔔' },
-  { id: 'wreath', name: 'wreath', glyph: '🎀' },
-  { id: 'snowman', name: 'snowman', glyph: '⛄' },
-  { id: 'sparkles', name: 'sparkles', glyph: '✨' },
-  { id: 'reindeer', name: 'reindeer', glyph: '🦌' },
-  { id: 'mistletoe', name: 'mistletoe', glyph: '🌿' },
-  { id: 'heart', name: 'heart', glyph: '❤️' },
 ]
 
 type Manifest<T> = { items?: T[] } | T[]
@@ -70,12 +53,18 @@ export async function loadFrames(): Promise<Frame[]> {
   return [...normalised, ...PAPER_FRAMES]
 }
 
+// the whole set lives in public/stickers so swapping in hand-drawn art is a
+// matter of dropping files in and editing the manifest
 export async function loadStickers(): Promise<Sticker[]> {
   const drawn = await loadManifest<Partial<Sticker>>('/stickers/manifest.json')
-  const normalised = drawn
-    .filter((sticker): sticker is Partial<Sticker> & { id: string; src: string } => !!sticker.id && !!sticker.src)
-    .map((sticker) => ({ id: sticker.id, name: sticker.name ?? sticker.id, src: sticker.src }))
-  return [...normalised, ...EMOJI_STICKERS]
+  return drawn
+    .filter((sticker) => !!sticker.id && (!!sticker.src || !!sticker.text))
+    .map((sticker) => ({
+      id: sticker.id as string,
+      name: sticker.name ?? (sticker.id as string),
+      src: sticker.src,
+      text: sticker.text,
+    }))
 }
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>()

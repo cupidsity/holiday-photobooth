@@ -275,9 +275,13 @@
   pointer-events: none;
 }
 
-.placed-sticker span {
+.placed-sticker.word {
+  font-weight: 700;
   line-height: 1;
-  pointer-events: none;
+  white-space: nowrap;
+  color: #f8f2e6;
+  -webkit-text-stroke-color: rgba(11, 23, 17, 0.45);
+  paint-order: stroke fill;
 }
 
 .placed-sticker.selected {
@@ -436,14 +440,20 @@
 }
 
 .sticker-item img {
-  width: 70%;
-  height: 70%;
+  width: 72%;
+  height: 72%;
   object-fit: contain;
 }
 
-.sticker-glyph {
+.sticker-item.word {
+  width: auto;
+  min-width: 54px;
+  padding: 0 12px;
+  font-family: Caveat, cursive;
   font-size: 26px;
+  font-weight: 700;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .caption-fields {

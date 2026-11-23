@@ -73,11 +73,11 @@ export function StickerTray({ stickers, onPick }: StickerTrayProps) {
       {stickers.map((sticker) => (
         <button
           key={sticker.id}
-          className="tray-item sticker-item"
+          className={`tray-item sticker-item${sticker.text ? ' word' : ''}`}
           onClick={() => onPick(sticker)}
           aria-label={`add ${sticker.name}`}
         >
-          {sticker.src ? <img src={sticker.src} alt="" /> : <span className="sticker-glyph">{sticker.glyph}</span>}
+          {sticker.text ? sticker.text : <img src={sticker.src} alt="" />}
         </button>
       ))}
     </div>

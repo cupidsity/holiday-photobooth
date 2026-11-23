@@ -55,6 +55,14 @@ export const FILTERS: PhotoFilter[] = [
     params: { saturate: 1.6, contrast: 1.15, brightness: 1.05 },
     wash: { color: '#ff2b4a', blend: 'soft-light', alpha: 0.24 },
   },
+  {
+    id: 'cyanotype',
+    name: 'cyanotype',
+    // sepia then a half turn of hue is the standard way to push a greyscale
+    // image into prussian blue, and the wash deepens the shadows from there
+    params: { grayscale: 1, sepia: 1, hueRotate: 186, saturate: 2.6, contrast: 1.12, brightness: 0.98 },
+    wash: { color: '#0e3f86', blend: 'multiply', alpha: 0.3 },
+  },
   { id: 'noir', name: 'north pole noir', params: { grayscale: 1, contrast: 1.25, brightness: 1.05 } },
   {
     id: 'twinkle',

@@ -169,13 +169,13 @@ export function Booth() {
       {
         key,
         stickerId: sticker.id,
-        glyph: sticker.glyph,
         src: sticker.src,
+        text: sticker.text,
         // new stickers land slightly off centre and nudge down the strip so a
         // handful dropped in a row do not stack perfectly on top of each other
         x: 0.5 + (current.length % 3 - 1) * 0.16,
         y: 0.22 + (current.length % 4) * 0.18,
-        size: 0.22,
+        size: sticker.text ? 0.14 : 0.22,
         rotation: ((current.length % 5) - 2) * 0.12,
       },
     ])

@@ -1,0 +1,154 @@
+{
+  "items": [
+    {
+      "id": "tree",
+      "name": "tree",
+      "src": "/stickers/tree.svg"
+    },
+    {
+      "id": "star",
+      "name": "star",
+      "src": "/stickers/star.svg"
+    },
+    {
+      "id": "snowflake",
+      "name": "snowflake",
+      "src": "/stickers/snowflake.svg"
+    },
+    {
+      "id": "gift",
+      "name": "gift",
+      "src": "/stickers/gift.svg"
+    },
+    {
+      "id": "candy-cane",
+      "name": "candy cane",
+      "src": "/stickers/candy-cane.svg"
+    },
+    {
+      "id": "bauble",
+      "name": "bauble",
+      "src": "/stickers/bauble.svg"
+    },
+    {
+      "id": "holly",
+      "name": "holly",
+      "src": "/stickers/holly.svg"
+    },
+    {
+      "id": "mug",
+      "name": "mug",
+      "src": "/stickers/mug.svg"
+    },
+    {
+      "id": "bell",
+      "name": "bell",
+      "src": "/stickers/bell.svg"
+    },
+    {
+      "id": "bow",
+      "name": "bow",
+      "src": "/stickers/bow.svg"
+    },
+    {
+      "id": "snowman",
+      "name": "snowman",
+      "src": "/stickers/snowman.svg"
+    },
+    {
+      "id": "sparkles",
+      "name": "sparkles",
+      "src": "/stickers/sparkles.svg"
+    },
+    {
+      "id": "heart",
+      "name": "heart",
+      "src": "/stickers/heart.svg"
+    },
+    {
+      "id": "daisy",
+      "name": "daisy",
+      "src": "/stickers/daisy.svg"
+    },
+    {
+      "id": "rose",
+      "name": "rose",
+      "src": "/stickers/rose.svg"
+    },
+    {
+      "id": "tulip",
+      "name": "tulip",
+      "src": "/stickers/tulip.svg"
+    },
+    {
+      "id": "sprig",
+      "name": "sprig",
+      "src": "/stickers/sprig.svg"
+    },
+    {
+      "id": "butterfly",
+      "name": "butterfly",
+      "src": "/stickers/butterfly.svg"
+    },
+    {
+      "id": "moon",
+      "name": "moon",
+      "src": "/stickers/moon.svg"
+    },
+    {
+      "id": "wreath",
+      "name": "wreath",
+      "src": "/stickers/wreath.svg"
+    },
+    {
+      "id": "word-merry",
+      "name": "merry",
+      "text": "merry"
+    },
+    {
+      "id": "word-xoxo",
+      "name": "xoxo",
+      "text": "xoxo"
+    },
+    {
+      "id": "word-ho-ho-ho",
+      "name": "ho ho ho",
+      "text": "ho ho ho"
+    },
+    {
+      "id": "word-so-cozy",
+      "name": "so cozy",
+      "text": "so cozy"
+    },
+    {
+      "id": "word-let-it-snow",
+      "name": "let it snow",
+      "text": "let it snow"
+    },
+    {
+      "id": "word-cheers",
+      "name": "cheers!",
+      "text": "cheers!"
+    },
+    {
+      "id": "word-be-mine",
+      "name": "be mine",
+      "text": "be mine"
+    },
+    {
+      "id": "word-brrr",
+      "name": "brrr",
+      "text": "brrr"
+    },
+    {
+      "id": "word-darling",
+      "name": "darling",
+      "text": "darling"
+    },
+    {
+      "id": "word-3",
+      "name": "<3",
+      "text": "<3"
+    }
+  ]
+}

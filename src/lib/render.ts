@@ -1,4 +1,4 @@
-import { Frame, Sticker, loadImage } from './assets'
+import { Frame, loadImage } from './assets'
 import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter } from './filters'
 import { FOOTER_HEIGHT, FOOTER_TOP, STRIP, drawCover, photoRect } from './strip'
 
@@ -7,13 +7,14 @@ export type PlacedSticker = {
   // dropped on the strip more than once
   key: string
   stickerId: string
-  glyph?: string
   src?: string
+  text?: string
   // centre position as a fraction of the strip, so the preview and the export
   // agree no matter what size the preview is drawn at
   x: number
   y: number
-  // width as a fraction of the strip width
+  // for line art this is the width as a fraction of the strip width, for a word
+  // sticker it is the font size as a fraction of the strip width
   size: number
   rotation: number
 }
@@ -28,7 +29,6 @@ export type StripOptions = {
 }
 
 export const CAPTION_FONT = 'Caveat'
-export const STICKER_FONT = `"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`
 
 export async function ensureFonts() {
   if (!document.fonts) return
@@ -114,29 +114,45 @@ export async function renderStripBase(ctx: CanvasRenderingContext2D, options: St
   drawCaption(ctx, frame, options.caption, options.subcaption)
 }
 
+export const WORD_STICKER_FONT = `"${CAPTION_FONT}", "Brush Script MT", cursive`
+// the halo that keeps a cream word readable over a bright photo, as a share of
+// the font size
+export const WORD_HALO = 0.1
+
 async function drawSticker(ctx: CanvasRenderingContext2D, sticker: PlacedSticker) {
   const size = sticker.size * STRIP.width
   const centerX = sticker.x * STRIP.width
   const centerY = sticker.y * STRIP.height
 
-  ctx.save()
-  ctx.translate(centerX, centerY)
-  ctx.rotate(sticker.rotation)
-  if (sticker.src) {
-    try {
-      const art = await loadImage(sticker.src)
-      const aspect = art.naturalWidth && art.naturalHeight ? art.naturalHeight / art.naturalWidth : 1
-      ctx.drawImage(art, -size / 2, (-size * aspect) / 2, size, size * aspect)
-    } catch {
-      // skip a sticker whose file disappeared rather than failing the export
-    }
-  } else if (sticker.glyph) {
-    ctx.font = `${size}px ${STICKER_FONT}`
+  if (sticker.text) {
+    ctx.save()
+    ctx.translate(centerX, centerY)
+    ctx.rotate(sticker.rotation)
+    ctx.font = `700 ${size}px ${WORD_STICKER_FONT}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(sticker.glyph, 0, 0)
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = size * WORD_HALO * 2
+    ctx.strokeStyle = 'rgba(11, 23, 17, 0.45)'
+    ctx.strokeText(sticker.text, 0, 0)
+    ctx.fillStyle = '#f8f2e6'
+    ctx.fillText(sticker.text, 0, 0)
+    ctx.restore()
+    return
   }
-  ctx.restore()
+  if (!sticker.src) return
+
+  try {
+    const art = await loadImage(sticker.src)
+    const aspect = art.naturalWidth && art.naturalHeight ? art.naturalHeight / art.naturalWidth : 1
+    ctx.save()
+    ctx.translate(centerX, centerY)
+    ctx.rotate(sticker.rotation)
+    ctx.drawImage(art, -size / 2, (-size * aspect) / 2, size, size * aspect)
+    ctx.restore()
+  } catch {
+    // skip a sticker whose file disappeared rather than failing the export
+  }
 }
 
 export async function renderStrip(options: StripOptions): Promise<HTMLCanvasElement> {
@@ -152,12 +168,4 @@ export async function renderStrip(options: StripOptions): Promise<HTMLCanvasElem
     await drawSticker(ctx, sticker)
   }
   return canvas
-}
-
-export function stickerPreviewSize(sticker: PlacedSticker, previewWidth: number): number {
-  return sticker.size * previewWidth
-}
-
-export function describeSticker(sticker: Sticker): string {
-  return sticker.name
 }
