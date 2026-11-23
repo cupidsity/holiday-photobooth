@@ -8,7 +8,7 @@ import { Frame, PAPER_FRAMES, Sticker, loadFrames, loadStickers } from '../lib/a
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR } from '../lib/config'
 import { cssFilter, filterById, withExposure } from '../lib/filters'
 import { CaptionFace, PlacedSticker, StripOptions, renderStrip } from '../lib/render'
-import { CAPTURE_HEIGHT, CAPTURE_WIDTH, STRIP, drawCover } from '../lib/strip'
+import { CAPTURE_HEIGHT, CAPTURE_WIDTH, STRIP, bleedTop, drawCover } from '../lib/strip'
 import { canShareStrip, saveStrip, shareStrip } from '../lib/download'
 import '../styles/booth.css'
 
@@ -337,7 +337,12 @@ export function Booth() {
 
         <div className="slot-housing">
           <div className="slot-mouth" aria-hidden="true" />
-          <div className="dropping">
+          <div
+            className="dropping"
+            // room for whatever the frame hangs above the strip, so the bow is
+            // not shaved off by the slot as the print comes out
+            style={{ paddingTop: `${(bleedTop(frame.art) / STRIP.width) * 100}%` }}
+          >
             <StripPreview options={stripOptions} selectedKey={null} onSelect={() => {}} onChange={() => {}} />
           </div>
         </div>

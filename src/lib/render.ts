@@ -215,10 +215,6 @@ export async function renderStripBase(
     return
   }
 
-  for (const sticker of options.stickers) {
-    await drawSticker(ctx, sticker, options)
-  }
-
   if (frame.src) {
     try {
       const art = await loadImage(frame.src)
@@ -245,6 +241,12 @@ export async function renderStripBase(
     } catch {
       // a frame whose art went missing still prints as plain paper
     }
+  }
+
+  // pressed pieces go on top of the frame, the way a sticker would sit on a
+  // printed strip rather than under its border
+  for (const sticker of options.stickers) {
+    await drawSticker(ctx, sticker, options)
   }
 
   // the caption sits on the frame's own caption band, so it goes down after

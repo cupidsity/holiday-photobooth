@@ -162,6 +162,35 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
     >
       <canvas ref={canvasRef} className="strip-canvas" />
 
+      {options.frame.src && (
+        <div
+          className="strip-bleed"
+          aria-hidden="true"
+          style={options.frame.art ? { top: `${-bleed}px` } : undefined}
+        >
+        <img
+          className="strip-frame-art"
+          src={options.frame.src}
+          alt=""
+          draggable={false}
+          // the art is laid over the strip cropped to its own bounds, exactly
+          // as the export does it, rather than stretched to fill
+          style={
+            options.frame.art
+              ? {
+                  width: `${options.frame.art.source.width * sourceToPreview}px`,
+                  height: `${options.frame.art.source.height * sourceToPreview}px`,
+                  left: `${-options.frame.art.left * sourceToPreview}px`,
+                  top: `${bleed - options.frame.art.top * sourceToPreview}px`,
+                }
+              : undefined
+          }
+        />
+        </div>
+      )}
+
+      {/* the caption rides on top of the frame art, the way the export has it.
+          each line is placed on the same centre line the canvas uses */}
       {options.stickers.map((sticker) => {
         const pixelSize = sticker.size * surfaceWidth
         const selected = sticker.key === selectedKey
@@ -224,35 +253,6 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
         )
       })}
 
-      {options.frame.src && (
-        <div
-          className="strip-bleed"
-          aria-hidden="true"
-          style={options.frame.art ? { top: `${-bleed}px` } : undefined}
-        >
-        <img
-          className="strip-frame-art"
-          src={options.frame.src}
-          alt=""
-          draggable={false}
-          // the art is laid over the strip cropped to its own bounds, exactly
-          // as the export does it, rather than stretched to fill
-          style={
-            options.frame.art
-              ? {
-                  width: `${options.frame.art.source.width * sourceToPreview}px`,
-                  height: `${options.frame.art.source.height * sourceToPreview}px`,
-                  left: `${-options.frame.art.left * sourceToPreview}px`,
-                  top: `${bleed - options.frame.art.top * sourceToPreview}px`,
-                }
-              : undefined
-          }
-        />
-        </div>
-      )}
-
-      {/* the caption rides on top of the frame art, the way the export has it.
-          each line is placed on the same centre line the canvas uses */}
       {options.frame.caption !== null &&
         (['big', 'small'] as const).map((line) => {
           const metrics = captionLayout(options.captionFace, options.frame.captionScale ?? 1)
