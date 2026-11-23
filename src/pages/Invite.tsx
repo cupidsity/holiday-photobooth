@@ -177,6 +177,9 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       const foldFrom = foldFromRef.current
       const folding = foldFrom === null ? 0 : clamp((now - foldFrom) / FOLD_MS, 0, 1)
       const fold = easeInOut(folding)
+      // the colour changes hands well before the characters arrive, so the
+      // first thing that reads is the tree turning into the strip's own ink
+      const inking = clamp(folding * 2.1, 0, 1)
       const standing = 1 - fold
 
       // the tree holds still under a finger and picks its spin back up the
@@ -359,9 +362,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
             const y = row * cellHeight + (landedY - row * cellHeight) * fold
 
             ctx.globalAlpha = 1
-            // the characters take the strip's ink before they land, so what
-            // settles is already the strip's own colour
-            ctx.fillStyle = mixPacked(colorBuffer[index], STRIP_INK, clamp(fold * 1.35, 0, 1))
+            ctx.fillStyle = mixPacked(colorBuffer[index], STRIP_INK, inking)
             ctx.fillText(glyphAt(code), x, y)
           }
         }
