@@ -200,7 +200,7 @@ export function buildTree(height: number, density = 1, spread = 1, girth = 0.46)
   // strands deep rather than one, which is what gives it the weight of a real
   // piece of tinsel instead of a drawn line
   const garlandSteps = Math.round(2200 * density)
-  const garlandThickness = height * 0.0075
+  const garlandThickness = height * 0.006
   for (let step = 0; step < garlandSteps; step += 1) {
     const down = 0.14 + (step / garlandSteps) * 0.84
     // the garland rides on the widest the tree ever gets at this height, not on
@@ -212,7 +212,7 @@ export function buildTree(height: number, density = 1, spread = 1, girth = 0.46)
     const sin = Math.sin(theta)
     const color = step % 9 < 5 ? '#ffc21f' : '#fff0c0'
     const strands = slimGarland ? 0 : 1
-    for (let strand = -strands; strand <= strands; strand += 1) {
+    for (let strand = 0; strand <= strands; strand += 1) {
       samples.push({
         x: cos * (radius + strand * garlandThickness * 0.4),
         y: (down - 0.5) * height + strand * garlandThickness,
@@ -531,11 +531,11 @@ export function rasterise(
     filled += 1
 
     if (sample.kind === 'garland' && !model.slimGarland) {
+      // only sideways: spreading it up and down as well turns the ribbon into
+      // a band wide enough to smother the needles behind it
       const spread = [
         [-1, 0],
         [1, 0],
-        [0, -1],
-        [0, 1],
       ]
       for (const [acrossOffset, downOffset] of spread) {
         const nearColumn = column + acrossOffset
