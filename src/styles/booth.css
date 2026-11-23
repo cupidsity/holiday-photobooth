@@ -472,8 +472,17 @@
   font-weight: 500;
 }
 
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+}
+
 .tray {
   display: flex;
+  /* never let the column squash the swatches: the body scrolls instead */
+  flex: 0 0 auto;
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -598,6 +607,7 @@
 
 .dial {
   display: flex;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 6px;
 }
@@ -710,6 +720,95 @@
   .dropping::after,
   .countdown {
     animation-duration: 0.01ms;
+  }
+}
+
+/* on a phone nothing scrolls: the strip is sized from the height that is left
+   over, and the panel does its own scrolling inside a fixed sheet */
+@media (max-width: 759px) {
+  .booth.intro,
+  .booth.edit {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .intro-layout {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    margin: auto 0;
+  }
+
+  .intro-card {
+    flex: 1;
+    min-width: 0;
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .intro-title {
+    font-size: clamp(19px, 5.2vw, 25px);
+  }
+
+  .intro-copy,
+  .intro-foot {
+    font-size: 12px;
+  }
+
+  .intro-strip .strip-surface {
+    width: min(28vw, calc((100dvh - 180px) / 3));
+  }
+
+  .booth.edit .edit-layout {
+    flex: 1;
+    min-height: 0;
+    gap: 12px;
+  }
+
+  .booth.edit .strip-surface {
+    width: min(52vw, calc((100dvh - 486px) / 3));
+  }
+
+  .booth.edit .panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* only the tab's own contents scroll: the tabs and the actions stay put, so
+     saving the strip is never behind a scroll */
+  .booth.edit .panel-body {
+    flex: 1;
+    /* a floor, so the tab's controls are never squeezed out by the buttons */
+    min-height: 152px;
+    overflow-y: auto;
+  }
+
+  .booth.edit .actions.stacked {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .booth.edit .actions.stacked > .button {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .booth.edit .retake-row {
+    flex: 1 1 100%;
+  }
+
+  .booth.edit .swatch {
+    width: 48px;
+  }
+
+  .booth.edit .tray-item {
+    width: 56px;
+  }
+
+  .sticker-groups {
+    max-height: none;
+    overflow-y: visible;
   }
 }
 

@@ -371,6 +371,7 @@ export function Booth() {
             ))}
           </div>
 
+          <div className="panel-body">
           {tab === 'look' && (
             <>
               <FilterTray
@@ -454,6 +455,7 @@ export function Booth() {
           {tab === 'paper' && <FrameTray frames={frames} activeId={frameId} onPick={setFrameId} />}
 
           {note && <p className="note">{note}</p>}
+          </div>
 
           <div className="actions stacked">
             <button className="button" disabled={!!busy} onClick={handleSave}>
