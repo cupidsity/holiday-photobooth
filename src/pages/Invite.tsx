@@ -105,7 +105,12 @@ export function Invite() {
           (height * 0.99) / (span * nearest),
         )
       }
-      centerY = height / 2 - ((tree.topY + tree.bottomY) / 2) * scale * nearest
+      // sit the tree a little above centre, but only as far as the spare room
+      // allows: when the fit is already tight this shift is nothing and the
+      // parcels stay on screen
+      const usedHeight = span * scale * nearest
+      const lift = Math.min(height * 0.07, Math.max(0, height - usedHeight) * 0.45)
+      centerY = height / 2 - ((tree.topY + tree.bottomY) / 2) * scale * nearest - lift
 
       // the grid is sized from the tree rather than from the canvas, so the
       // weave stays the same whatever shape the screen is. a character cell is
