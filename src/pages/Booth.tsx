@@ -4,7 +4,7 @@ import { Dial, FilterTray, FrameTray, StickerTray } from '../booth/Trays'
 import { StripPreview } from '../booth/StripPreview'
 import { useCamera } from '../booth/useCamera'
 import { Frame, PAPER_FRAMES, Sticker, loadFrames, loadStickers } from '../lib/assets'
-import { PARTY_NAME, PARTY_YEAR } from '../lib/config'
+import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR } from '../lib/config'
 import { cssFilter, filterById, withExposure } from '../lib/filters'
 import { CaptionFace, PlacedSticker, StripOptions, renderStrip } from '../lib/render'
 import { PHOTO_HEIGHT, PHOTO_WIDTH, drawCover } from '../lib/strip'
@@ -69,6 +69,27 @@ export function Booth() {
     () => ({ shots, frame, filter, exposure, paper, caption, subcaption, captionFace, stickers: placed }),
     [shots, frame, filter, exposure, paper, caption, subcaption, captionFace, placed],
   )
+
+  // the blank strip on the first screen: real paper, real botanicals, no
+  // pretend photographs in the three windows
+  const sampleStrip: StripOptions = useMemo(() => {
+    const bordered = frames.find((item) => item.src) ?? frame
+    return {
+      shots: [null, null, null],
+      frame: bordered,
+      filter,
+      exposure,
+      paper,
+      caption: PARTY_NAME,
+      subcaption: String(PARTY_YEAR),
+      captionFace: 'script',
+      stickers: [
+        { key: 'sample-1', stickerId: 'sigil-spine', src: '/stickers/sigil-spine.svg', x: 0.33, y: 0.15, size: 0.19, rotation: -0.2 },
+        { key: 'sample-2', stickerId: 'daisy', src: '/stickers/daisy.svg', x: 0.66, y: 0.42, size: 0.2, rotation: 0.25 },
+        { key: 'sample-3', stickerId: 'lily', src: '/stickers/lily.svg', x: 0.38, y: 0.68, size: 0.24, rotation: 0.1 },
+      ],
+    }
+  }, [frames, frame, filter, exposure, paper])
 
   const grabFrame = useCallback((): HTMLCanvasElement | null => {
     const video = videoRef.current
@@ -216,17 +237,24 @@ export function Booth() {
   if (phase === 'intro') {
     return (
       <div className="booth intro">
-        <div className="intro-card">
-          <p className="intro-mark">sunprint booth</p>
-          <h1 className="intro-title">Three photographs, one blue strip.</h1>
-          <p className="intro-copy">
-            The booth counts you in three times, then the strip drops out of the slot and develops.
-            Press flowers and sigils into it, set the exposure, keep it.
-          </p>
-          <button className="button" onClick={openBooth}>
-            Start the booth
-          </button>
-          <p className="intro-foot">Your camera never leaves this device. Nothing is uploaded.</p>
+        <div className="intro-layout">
+          <div className="intro-card">
+            <p className="intro-mark">{BOOTH_NAME}</p>
+            <h1 className="intro-title">Three photographs, one blue strip.</h1>
+            <p className="intro-copy">
+              The booth counts you in three times, then the strip drops out of the slot and develops.
+              Press flowers and sigils into it, set the exposure, keep it.
+            </p>
+            <button className="button" onClick={openBooth}>
+              Start the booth
+            </button>
+            <p className="intro-foot">Your camera never leaves this device. Nothing is uploaded.</p>
+          </div>
+
+          <div className="intro-strip" aria-hidden="true">
+            <StripPreview options={sampleStrip} selectedKey={null} onSelect={() => {}} onChange={() => {}} />
+            <p className="intro-caption">An unexposed strip, pressed and waiting.</p>
+          </div>
         </div>
       </div>
     )

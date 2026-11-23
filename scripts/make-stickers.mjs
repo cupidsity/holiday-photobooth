@@ -567,11 +567,11 @@ const placements = [
   ['wild-stem', 54, 1250, 1.9, 14],
   ['tendril', 548, 1290, 1.6, -20],
   ['sprig-dummy', 0, 0, 0, 0],
-  ['clover', 86, 1545, 1.3, -24],
-  ['butterfly-line', 500, 1548, 1.4, 12],
-  ['star-spark', 300, 36, 0.9, 0],
-  ['sparkle', 120, 1700, 1.1, 0],
-  ['queen-annes-lace', 470, 1690, 1.5, -10],
+  ['clover', 70, 1530, 1.2, -24],
+  ['butterfly-line', 520, 1536, 1.3, 12],
+  ['star-spark', 300, 30, 0.8, 0],
+  ['sparkle', 52, 1744, 1.0, 0],
+  ['queen-annes-lace', 548, 1752, 1.2, -10],
 ]
 
 const frameArt = placements

@@ -25,6 +25,32 @@
   align-items: center;
 }
 
+.intro-layout {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 24px;
+}
+
+.intro-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.intro-strip .strip-surface {
+  width: min(48vw, 180px);
+}
+
+.intro-caption {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
 .intro-card {
   width: min(100%, 460px);
   background: var(--sheet);
@@ -46,7 +72,7 @@
 .intro-title {
   margin: 0;
   font-family: var(--serif);
-  font-size: 32px;
+  font-size: clamp(24px, 4.6vw, 32px);
   font-weight: 400;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -257,19 +283,19 @@
 .slot-mouth {
   height: 26px;
   border-radius: 6px 6px 2px 2px;
-  background: linear-gradient(#1a2c42, #0a1726 62%, #223650);
-  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.55);
+  background: #16283c;
   position: relative;
 }
 
+/* the dark lip the strip is pushed through */
 .slot-mouth::after {
   content: '';
   position: absolute;
-  left: 7%;
-  right: 7%;
-  bottom: 5px;
-  height: 3px;
-  border-radius: 2px;
+  left: 6%;
+  right: 6%;
+  bottom: 4px;
+  height: 6px;
+  border-radius: 3px;
   background: #050d18;
 }
 
@@ -482,7 +508,8 @@
 
 .tray-item.active .swatch {
   border-color: var(--prussian);
-  box-shadow: inset 0 0 0 1px var(--prussian);
+  outline: 1px solid var(--prussian);
+  outline-offset: -2px;
 }
 
 .swatch img {
@@ -499,7 +526,7 @@
 }
 
 .swatch-blank {
-  background: linear-gradient(#dfe8f1, #41607f 60%, #0e2440);
+  background: #41607f;
 }
 
 .frame-swatch {
@@ -691,6 +718,18 @@
   .dropping::after,
   .countdown {
     animation-duration: 0.01ms;
+  }
+}
+
+@media (min-width: 760px) {
+  .intro-layout {
+    flex-direction: row;
+    justify-content: center;
+    gap: 48px;
+  }
+
+  .intro-strip .strip-surface {
+    width: min(230px, calc((100dvh - 140px) / 3));
   }
 }
 

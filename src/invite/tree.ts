@@ -61,7 +61,8 @@ export function buildTree(width: number, gridHeight: number): TreeCell[] {
   const cells: TreeCell[] = []
   const topRow = Math.max(0, gridHeight - (1 + halves.length + trunkHeight))
 
-  cells.push({ column: center, row: topRow, glyph: '★', kind: 'star' })
+  // the star is a drawn character in the ascii art, not an icon in the interface
+  cells.push({ column: center, row: topRow, glyph: '★', kind: 'star' }) // taste-skill-ignore
 
   halves.forEach((half, index) => {
     const row = topRow + 1 + index
