@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "id": "garland",
+      "name": "garland",
+      "kind": "strip",
+      "src": "/frames/garland.svg",
+      "background": "#f6efe2",
+      "ink": "#1d3b2a"
+    },
+    {
+      "id": "lights",
+      "name": "fairy lights",
+      "kind": "strip",
+      "src": "/frames/lights.svg",
+      "background": "#12241b",
+      "ink": "#f6efe2"
+    }
+  ]
+}

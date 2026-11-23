@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="1800" viewBox="0 0 600 1800">
+  <defs>
+    <g id="holly">
+      <path d="M0 0 C -26 -16 -44 -6 -52 10 C -36 24 -14 20 0 0 Z" fill="#1f5c38"/>
+      <path d="M0 0 C -18 -32 -2 -50 16 -52 C 26 -34 16 -14 0 0 Z" fill="#2a7a49"/>
+      <circle cx="8" cy="10" r="7" fill="#c1152c"/>
+      <circle cx="21" cy="2" r="5.5" fill="#e03046"/>
+      <circle cx="18" cy="17" r="4.5" fill="#9c0f22"/>
+    </g>
+    <g id="swag">
+      <path d="M-230 0 Q0 46 230 0" fill="none" stroke="#1f5c38" stroke-width="9" stroke-linecap="round"/>
+      <path d="M-230 0 Q0 46 230 0" fill="none" stroke="#2a7a49" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 16"/>
+      <circle cx="-120" cy="24" r="6" fill="#c1152c"/>
+      <circle cx="0" cy="40" r="7" fill="#e03046"/>
+      <circle cx="120" cy="24" r="6" fill="#c1152c"/>
+    </g>
+  </defs>
+
+  <use href="#holly" x="54" y="54"/>
+  <use href="#holly" x="546" y="54" transform="scale(-1,1) translate(-1092,0)"/>
+  <use href="#swag" x="300" y="546"/>
+  <use href="#swag" x="300" y="1070"/>
+  <use href="#holly" x="54" y="1572" transform="scale(1,-1) translate(0,-3144)"/>
+  <use href="#holly" x="546" y="1572" transform="scale(-1,-1) translate(-1092,-3144)"/>
+</svg>
