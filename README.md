@@ -23,7 +23,6 @@ through the deployed url or a tunnel (`npx localtunnel --port 5173`).
 ```bash
 npm run build          # production bundle
 npm run typecheck      # tsc
-npm run verify:invite  # proves the tree's overhead view is exactly the qr code
 node scripts/make-stickers.mjs   # redraws every sticker and the border frame
 ```
 
@@ -66,22 +65,27 @@ the strip exports at 600x1800, a real 2x6in photobooth strip at 300dpi.
 
 ## the tv screen
 
-open `/invite` fullscreen on the tv. it loops on its own: the tree turns on its
-trunk for six seconds, tips overhead into the qr for nine, tips back.
+open `/invite` fullscreen on the tv. an ascii christmas tree with real depth,
+turning on its own, with shaded baubles, a wound garland, a gold star and a pile
+of wrapped presents at its foot. it grows in from the ground when the screen
+first opens.
 
-- **click / space** — jump straight to the code (and back to auto)
-- **↑ / ↓** — hold the code or hold the tree
-- `/invite?view=code` or `?view=tree` — freeze one view, handy for a photo
+- **drag** — turn the tree; a flick keeps its own momentum
+- **drag down** — tip the view up over the top of it
+- **space** — stop or restart the spin
+- **r** — reset the view and play the reveal again
 
-the trick is honest geometry rather than two pictures swapped out. every glyph
-is one point in 3d: its column is shared by both views, its height draws the
-tree, and its depth is a dark module of the qr code. each glyph is pushed to
-whichever dark module sits nearest the cone it would occupy if the tree were
-solid, so the tree has real volume and can turn without smearing. the leftover
-modules the tree does not need become the snow around it. head-on you read a
-tree; from directly above the heights collapse and the glyphs land exactly on
-the code. `npm run verify:invite` checks every dark module is covered, that no
-light module is painted on, and that no part of the tree went missing.
+it is not a sprite or a video. the tree is a lit 3d surface rasterised into a
+character grid: every sample is shaded with a lambert term against one light,
+projected with a perspective divide, and the nearest sample in each cell of the
+grid picks the character from a brightness ramp. that is why the shaded side
+fills with `.` and `-` while the lit side fills with `@` and `%`, and why a
+bauble reads as a ball — each one is its own little sphere of samples.
+
+the guests get to the booth from the url printed under the tree. an earlier
+version had the tree tip over and land as a scannable qr code; it is in the git
+history (`rebuild the invite as a volumetric ascii tree that flies into
+formation as the qr code`) if you want it back.
 
 ## your own art
 
@@ -101,8 +105,6 @@ src/lib/render.ts     paints the strip: photos, pressed pieces, frame, caption
 src/lib/filters.ts    the filter presets and the exposure dial
 src/lib/paper.ts      grain, flecks, halation, vignette
 src/booth/            camera, countdown, trays, arrangements, the sticker layer
-src/invite/tree.ts    the ascii tree
-src/invite/scene.ts   the dual projection that makes it also a qr code
+src/invite/asciiTree.ts     the tree's geometry and the character-grid raster
 scripts/make-stickers.mjs   draws every sticker and the border frame
-scripts/verify-invite.ts    proves the overhead view scans
 ```

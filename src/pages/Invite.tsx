@@ -110,7 +110,7 @@ export function Invite() {
       // the tree is taller than its own height: the star sits above the cone and
       // the parcels sit below it, and perspective magnifies whatever is nearest.
       // fit all of that, or the foot of the tree runs off the bottom
-      const scale = Math.min(width / 1420, height / 1500)
+      const scale = Math.min(width / 1320, height / 1380)
       const centerX = width / 2
       const centerY = height * 0.52
       const reveal = clamp((now - revealFromRef.current) / REVEAL_MS, 0, 1)
