@@ -60,9 +60,3 @@
   gap: 0.3em;
 }
 
-.invite-url {
-  margin: 0;
-  font-size: clamp(12px, 1.9vmin, 22px);
-  color: #ffc21f;
-  letter-spacing: 0.01em;
-}

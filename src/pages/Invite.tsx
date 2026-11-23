@@ -12,7 +12,7 @@ import {
   rasterise,
   shootingGlyph,
 } from '../invite/asciiTree'
-import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
+import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR } from '../lib/config'
 import '../styles/invite.css'
 
 const FOCAL = 900
@@ -40,7 +40,6 @@ export function Invite() {
   const velocityRef = useRef(0)
   const spinRef = useRef(true)
   const revealFromRef = useRef(performance.now())
-  const url = boothUrl()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -293,10 +292,6 @@ export function Invite() {
         </header>
 
         <canvas ref={canvasRef} className="invite-canvas" />
-
-        <footer className="invite-foot">
-          <p className="invite-url">{url.replace(/^https?:\/\//, '')}</p>
-        </footer>
       </div>
     </div>
   )
