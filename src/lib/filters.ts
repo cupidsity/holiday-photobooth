@@ -1,3 +1,7 @@
+// the blends that behave the same in canvas and css, so a wash looks identical
+// in the live preview and on the exported strip
+export type StripWash = 'soft-light' | 'overlay' | 'multiply' | 'screen'
+
 export type FilterParams = {
   brightness: number
   contrast: number
@@ -13,7 +17,7 @@ export type PhotoFilter = {
   params: Partial<FilterParams>
   // a flat wash painted over the photo after the colour work, which is how the
   // warmer presets get their tint without crushing the whites
-  wash?: { color: string; blend: GlobalCompositeOperation; alpha: number }
+  wash?: { color: string; blend: StripWash; alpha: number }
 }
 
 const NEUTRAL: FilterParams = {
