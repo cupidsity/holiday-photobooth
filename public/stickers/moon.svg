@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 100 100">
   <g fill="#dde7dc" stroke="#dde7dc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
-    <path fill-rule="evenodd" d="M48 50 m-40 0 a40 40 0 1 0 80 0 a40 40 0 1 0 -80 0 M66 46 m-34 0 a34 34 0 1 0 68 0 a34 34 0 1 0 -68 0" />
+    <path fill-rule="evenodd" d="M8 50 A40 40 0 1 0 88 50 A40 40 0 1 0 8 50 Z M20 48 A34 34 0 1 0 88 48 A34 34 0 1 0 20 48 Z" />
   </g>
 </svg>

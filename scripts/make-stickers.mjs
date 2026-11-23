@@ -145,7 +145,7 @@ const stickers = {
     <path d="M86 20 C56 8 18 24 18 52 C18 72 38 84 54 78 C68 73 72 56 62 48 C53 41 40 46 40 56" fill="none" stroke-width="6" />
   `,
   moon: `
-    <path fill-rule="evenodd" d="M48 50 m-40 0 a40 40 0 1 0 80 0 a40 40 0 1 0 -80 0 M66 46 m-34 0 a34 34 0 1 0 68 0 a34 34 0 1 0 -68 0" />
+    <path fill-rule="evenodd" d="M8 50 A40 40 0 1 0 88 50 A40 40 0 1 0 8 50 Z M20 48 A34 34 0 1 0 88 48 A34 34 0 1 0 20 48 Z" />
   `,
   snowflake: `
     ${ring(50, 50, 0, 6, (cx, cy, radius, angle) => {
