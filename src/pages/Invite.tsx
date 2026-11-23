@@ -54,7 +54,15 @@ export function Invite() {
       (navigator.hardwareConcurrency ?? 8) <= 4
 
     const TREE_HEIGHT = 1000
-    const tree = buildTree(TREE_HEIGHT, lightweight ? 0.6 : 1)
+    // a portrait screen is the one case where the tree's own width is what
+    // stops it being drawn bigger
+    const portrait = window.innerHeight / window.innerWidth > 1.3
+    const tree = buildTree(
+      TREE_HEIGHT,
+      lightweight ? 0.62 : 1,
+      portrait ? 0.62 : 1,
+      portrait ? 0.34 : 0.46,
+    )
     const snow = buildSnow(lightweight ? 70 : 150)
     const field = buildField(lightweight ? 260 : 620)
     const shooting = buildShootingStars(lightweight ? 2 : 3)
@@ -72,6 +80,8 @@ export function Invite() {
     let depthBuffer = new Float32Array(0)
     let glyphBuffer = new Int16Array(0)
     let colorBuffer = new Int32Array(0)
+    let scale = 1
+    let centerY = 0
 
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2)
@@ -82,11 +92,27 @@ export function Invite() {
       canvas.height = Math.round(height * ratio)
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
 
-      // the grid is set from the rows, not the columns: a character cell is
-      // 0.6em wide and a little over 1em tall, so spacing the rows any tighter
+      // fit the whole model, star and parcels included. perspective magnifies
+      // whatever is nearest the eye and the amount it magnifies by depends on
+      // the scale, so the fit settles over a few passes
+      const span = tree.bottomY - tree.topY
+      scale = Math.min(width / (tree.reach * 2), height / span)
+      let nearest = 1
+      for (let pass = 0; pass < 4; pass += 1) {
+        nearest = FOCAL / (FOCAL - tree.reach * scale)
+        scale = Math.min(
+          (width * 0.99) / (tree.reach * 2 * nearest),
+          (height * 0.99) / (span * nearest),
+        )
+      }
+      centerY = height / 2 - ((tree.topY + tree.bottomY) / 2) * scale * nearest
+
+      // the grid is sized from the tree rather than from the canvas, so the
+      // weave stays the same whatever shape the screen is. a character cell is
+      // 0.6em wide and a little over 1em tall, and spacing the rows any tighter
       // is what makes glyphs sit on top of each other
-      const wantedRows = lightweight ? 46 : 64
-      cellHeight = Math.max(8, height / wantedRows)
+      const treeRows = lightweight ? 48 : 60
+      cellHeight = Math.max(7, (span * scale * nearest) / treeRows)
       fontSize = cellHeight / 1.06
       cellWidth = fontSize * 0.6
       columns = Math.ceil(width / cellWidth) + 1
@@ -112,21 +138,7 @@ export function Invite() {
       ctx.fillStyle = PALETTE.night
       ctx.fillRect(0, 0, width, height)
 
-      // fit the whole model, star and parcels included. perspective magnifies
-      // whatever is nearest the eye and the amount it magnifies by depends on
-      // the scale, so the fit settles over a few passes
-      const span = tree.bottomY - tree.topY
-      let scale = Math.min((width * 0.94) / (tree.reach * 2), (height * 0.94) / span)
-      let nearest = 1
-      for (let pass = 0; pass < 4; pass += 1) {
-        nearest = FOCAL / (FOCAL - tree.reach * scale)
-        scale = Math.min(
-          (width * 0.94) / (tree.reach * 2 * nearest),
-          (height * 0.94) / (span * nearest),
-        )
-      }
       const centerX = width / 2
-      const centerY = height / 2 - ((tree.topY + tree.bottomY) / 2) * scale * nearest
       const reveal = clamp((now - revealFromRef.current) / REVEAL_MS, 0, 1)
 
       rasterise(

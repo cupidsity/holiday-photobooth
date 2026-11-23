@@ -91,12 +91,19 @@ export type TreeModel = {
   topY: number
   bottomY: number
   reach: number
+  // a coarse grid gives every garland cell more of the tree, so the ribbon is
+  // drawn thinner there or it smothers the needles
+  slimGarland: boolean
 }
 
-export function buildTree(height: number, density = 1): TreeModel {
+// `spread` pulls the pile of presents in or out, and `girth` sets how wide the
+// cone is against its height. on a tall narrow screen the tree's own width is
+// what caps how big it can be drawn, so a phone gets a slimmer fir
+export function buildTree(height: number, density = 1, spread = 1, girth = 0.46): TreeModel {
   const random = makeRandom(20261123)
+  const slimGarland = density < 0.8
   const samples: Sample[] = []
-  const baseRadius = height * 0.46
+  const baseRadius = height * girth
   const layers = Math.round(150 * density)
   let lightCount = 0
 
@@ -196,13 +203,16 @@ export function buildTree(height: number, density = 1): TreeModel {
   const garlandThickness = height * 0.0075
   for (let step = 0; step < garlandSteps; step += 1) {
     const down = 0.14 + (step / garlandSteps) * 0.84
-    const tier = (down * 7) % 1
-    const radius = baseRadius * (0.04 + down * 0.96) * (0.72 + tier * 0.28) * 1.07
+    // the garland rides on the widest the tree ever gets at this height, not on
+    // the tiered surface: follow the sawtooth and every tier's overhang eats
+    // the strand and the spiral comes apart
+    const radius = baseRadius * (0.04 + down * 0.96) * 1.08
     const theta = down * Math.PI * 10
     const cos = Math.cos(theta)
     const sin = Math.sin(theta)
     const color = step % 9 < 5 ? '#ffc21f' : '#fff0c0'
-    for (let strand = -1; strand <= 1; strand += 1) {
+    const strands = slimGarland ? 0 : 1
+    for (let strand = -strands; strand <= strands; strand += 1) {
       samples.push({
         x: cos * (radius + strand * garlandThickness * 0.4),
         y: (down - 0.5) * height + strand * garlandThickness,
@@ -245,7 +255,7 @@ export function buildTree(height: number, density = 1): TreeModel {
   // instead of collapsing to a streak when it turns edge on
   for (let box = 0; box < 8; box += 1) {
     const angle = (box / 8) * Math.PI * 2 + 0.6
-    const away = baseRadius * (0.66 + random() * 0.5)
+    const away = baseRadius * (0.66 + random() * 0.5) * spread
     const wide = height * (0.075 + random() * 0.05)
     const tall = wide * (0.62 + random() * 0.4)
     const deep = wide * (0.72 + random() * 0.35)
@@ -357,6 +367,7 @@ export function buildTree(height: number, density = 1): TreeModel {
     topY,
     bottomY,
     reach,
+    slimGarland,
   }
 }
 
@@ -482,7 +493,13 @@ export function rasterise(
     } else if (sample.kind === 'garland') {
       const shimmer = 0.76 + 0.24 * Math.sin(time * 0.0025 + sample.phase)
       level = 0.95
-      glyph = sample.color === '#ffc21f' ? '@' : 'O'
+      glyph = model.slimGarland
+        ? sample.color === '#ffc21f'
+          ? 'o'
+          : '*'
+        : sample.color === '#ffc21f'
+          ? '@'
+          : 'O'
       ;[red, green, blue] = mixHex('#6b4a08', sample.color ?? '#ffc21f', shimmer)
     } else if (sample.kind === 'gift' || sample.kind === 'ribbon') {
       // wrapping paper is flat colour, so the glyph carries the shading rather
@@ -513,7 +530,7 @@ export function rasterise(
     colorBuffer[index] = packed
     filled += 1
 
-    if (sample.kind === 'garland') {
+    if (sample.kind === 'garland' && !model.slimGarland) {
       const spread = [
         [-1, 0],
         [1, 0],
