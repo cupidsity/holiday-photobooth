@@ -60,20 +60,6 @@
   gap: 0.3em;
 }
 
-.invite-hint {
-  margin: 0;
-  font-size: clamp(12px, 1.9vmin, 23px);
-  opacity: 0.8;
-}
-
-.invite-readout {
-  margin: 0;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace; /* taste-skill-ignore */
-  font-size: clamp(9px, 1.25vmin, 15px);
-  opacity: 0.45;
-  font-variant-numeric: tabular-nums;
-}
-
 .invite-url {
   margin: 0;
   font-size: clamp(12px, 1.9vmin, 22px);

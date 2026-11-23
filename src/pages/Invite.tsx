@@ -1,5 +1,15 @@
-import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
-import { PALETTE, buildField, buildSnow, buildTree, glyphAt, rasterise } from '../invite/asciiTree'
+import { PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react'
+import {
+  PALETTE,
+  buildField,
+  buildShootingStars,
+  buildSnow,
+  buildTree,
+  glyphAt,
+  rasterise,
+  resetShootingStar,
+  shootingTailGlyph,
+} from '../invite/asciiTree'
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
 import '../styles/invite.css'
 
@@ -22,14 +32,18 @@ function packedToCss(packed: number): string {
 
 export function Invite() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const dragRef = useRef<{ pointerId: number; lastX: number; lastY: number; lastTime: number } | null>(null)
+  const dragRef = useRef<{
+    pointerId: number
+    lastX: number
+    lastY: number
+    lastTime: number
+    travel: number
+  } | null>(null)
   const angleRef = useRef(0.34)
   const pitchRef = useRef(0)
   const velocityRef = useRef(0)
   const spinRef = useRef(true)
   const revealFromRef = useRef(performance.now())
-  const [spinning, setSpinning] = useState(true)
-  const [readout, setReadout] = useState({ rotation: 0, lights: 0, letters: 0 })
   const url = boothUrl()
 
   useEffect(() => {
@@ -48,10 +62,10 @@ export function Invite() {
     const tree = buildTree(TREE_HEIGHT, lightweight ? 0.6 : 1)
     const snow = buildSnow(lightweight ? 70 : 150)
     const field = buildField(lightweight ? 260 : 620)
+    const shooting = buildShootingStars(lightweight ? 2 : 3)
 
     let previous = performance.now()
     let frame = 0
-    let lastReadout = 0
 
     let width = 0
     let height = 0
@@ -133,6 +147,30 @@ export function Invite() {
         ctx.fillText(mark.glyph, mark.x * width, mark.y * height)
       }
 
+      // the odd shooting star crossing the back of the sky
+      for (const star of shooting) {
+        star.age += delta
+        if (star.age < 0) continue
+        if (star.age > star.span) {
+          if (star.age > star.span + 2.5) resetShootingStar(star, Math.random)
+          continue
+        }
+        const travelled = (star.age / star.span) * star.speed
+        const headX = (star.x + star.dirX * travelled) * width
+        const headY = (star.y + star.dirY * travelled) * height
+        const fade = 1 - (star.age / star.span) ** 2
+        for (let step = 0; step < star.tail; step += 1) {
+          const back = step * cellWidth * 1.5
+          ctx.globalAlpha = fade * (1 - step / star.tail) * reveal
+          ctx.fillStyle = step === 0 ? '#ffffff' : PALETTE.snow
+          ctx.fillText(
+            shootingTailGlyph(step),
+            headX - star.dirX * back,
+            headY - star.dirY * back * 0.8,
+          )
+        }
+      }
+
       ctx.fillStyle = PALETTE.snow
       for (const flake of snow) {
         flake.y = (flake.y + flake.fall * delta) % 1
@@ -141,7 +179,7 @@ export function Invite() {
         ctx.fillText(flake.size > 1.4 ? '*' : '·', driftX * width, flake.y * height)
       }
 
-      const filled = rasterise(
+      rasterise(
         tree,
         {
           columns,
@@ -173,16 +211,6 @@ export function Invite() {
         }
       }
 
-      if (now - lastReadout > 220) {
-        lastReadout = now
-        const turns = ((angleRef.current * 180) / Math.PI) % 360
-        setReadout({
-          rotation: turns < 0 ? turns + 360 : turns,
-          lights: tree.lightCount,
-          letters: filled,
-        })
-      }
-
       frame = requestAnimationFrame(draw)
     }
 
@@ -200,7 +228,6 @@ export function Invite() {
       if (event.key === ' ') {
         event.preventDefault()
         spinRef.current = !spinRef.current
-        setSpinning(spinRef.current)
       }
       if (event.key.toLowerCase() === 'r') {
         revealFromRef.current = performance.now()
@@ -218,6 +245,7 @@ export function Invite() {
       lastX: event.clientX,
       lastY: event.clientY,
       lastTime: performance.now(),
+      travel: 0,
     }
     ;(event.target as Element).setPointerCapture?.(event.pointerId)
   }
@@ -232,19 +260,24 @@ export function Invite() {
     pitchRef.current = clamp(pitchRef.current + down * 0.004, PITCH_LOW, PITCH_HIGH)
     const elapsed = Math.max(1, now - drag.lastTime)
     velocityRef.current = clamp((across * 0.009 * 1000) / elapsed, -5, 5)
+    drag.travel += Math.abs(across) + Math.abs(down)
     drag.lastX = event.clientX
     drag.lastY = event.clientY
     drag.lastTime = now
   }
 
   function endDrag(event: ReactPointerEvent) {
-    if (dragRef.current?.pointerId !== event.pointerId) return
+    const drag = dragRef.current
+    if (drag?.pointerId !== event.pointerId) return
     dragRef.current = null
-    // a flick hands the tree back to its own momentum rather than the clock
-    if (Math.abs(velocityRef.current) > 0.6) {
-      spinRef.current = false
-      setSpinning(false)
+    if (drag.travel < 6) {
+      // a tap with no drag in it means hold it there, or let it go again
+      velocityRef.current = 0
+      spinRef.current = !spinRef.current
+      return
     }
+    // a drag hands the tree to its own momentum rather than back to the clock
+    spinRef.current = false
   }
 
   return (
@@ -266,11 +299,6 @@ export function Invite() {
         <canvas ref={canvasRef} className="invite-canvas" />
 
         <footer className="invite-foot">
-          <p className="invite-readout">
-            rotation {readout.rotation.toFixed(2)}° · lights {readout.lights} · letters{' '}
-            {readout.letters.toLocaleString()} · {spinning ? 'spinning' : 'held'}
-          </p>
-          <p className="invite-hint">Drag to turn it. Drag down to look over the top.</p>
           <p className="invite-url">{url.replace(/^https?:\/\//, '')}</p>
         </footer>
       </div>

@@ -83,6 +83,9 @@ export type TreeModel = {
   height: number
   radius: number
   lightCount: number
+  // the star is a flat shape, so it is drawn as a billboard around this point
+  // rather than turned with the tree, or it goes edge on twice a revolution
+  starAnchorY: number
 }
 
 export function buildTree(height: number, density = 1): TreeModel {
@@ -125,11 +128,13 @@ export function buildTree(height: number, density = 1): TreeModel {
   // the baubles. each one is a small sphere of its own rather than a coloured
   // character, so it shades like a ball and keeps its shape as the tree turns
   const baubleCount = Math.round(54 * density)
-  const baubleRadius = height * 0.019
   for (let ornament = 0; ornament < baubleCount; ornament += 1) {
-    const down = 0.1 + random() * 0.88
+    // nothing hangs near the tip: up there the cone is narrower than the ball
+    // and the ornaments end up floating off the sides of the tree
+    const down = 0.3 + random() * 0.66
     const tier = (down * 7) % 1
     const sitting = baseRadius * (0.04 + down * 0.96) * (0.72 + tier * 0.28)
+    const baubleRadius = Math.min(height * 0.019, sitting * 0.3)
     const theta = random() * Math.PI * 2
     const hangX = Math.cos(theta) * (sitting + baubleRadius * 0.6)
     const hangZ = Math.sin(theta) * (sitting + baubleRadius * 0.6)
@@ -287,7 +292,7 @@ export function buildTree(height: number, density = 1): TreeModel {
 
   // a real five pointed star on the top, filled in so it reads as a shape and
   // not as a bright speck
-  const starRadius = height * 0.085
+  const starRadius = height * 0.125
   const starPoints: [number, number][] = []
   for (let corner = 0; corner < 10; corner += 1) {
     const reach = corner % 2 === 0 ? starRadius : starRadius * 0.42
@@ -303,7 +308,7 @@ export function buildTree(height: number, density = 1): TreeModel {
     }
     return inside
   }
-  const starStep = starRadius / 11
+  const starStep = starRadius / 14
   const starTop = -height * 0.5 - starRadius * 0.55
   for (let across = -starRadius; across <= starRadius; across += starStep) {
     for (let down = -starRadius; down <= starRadius; down += starStep) {
@@ -322,7 +327,7 @@ export function buildTree(height: number, density = 1): TreeModel {
     }
   }
 
-  return { samples, height, radius: baseRadius, lightCount }
+  return { samples, height, radius: baseRadius, lightCount, starAnchorY: starTop }
 }
 
 const LIGHT_DIR = (() => {
@@ -373,6 +378,10 @@ export function rasterise(
   let filled = 0
 
   const front = 1 - reveal
+  // where the star hangs, carried through the same rotation as everything else
+  const anchorY = model.starAnchorY * pitchCos
+  const anchorZ = -model.starAnchorY * pitchSin
+
   for (const sample of model.samples) {
     // the tree grows up out of the ground, so anything above the front has not
     // been printed yet
@@ -380,12 +389,23 @@ export function rasterise(
     if (down < front) continue
     const onFront = down - front < 0.035 && reveal < 1
 
-    const spunX = sample.x * angleCos - sample.z * angleSin
-    const turnedZ = sample.x * angleSin + sample.z * angleCos
-    // tipping the camera up swaps height for depth, so looking straight down
-    // flattens the cone into rings
-    const spunY = sample.y * pitchCos + turnedZ * pitchSin
-    const spunZ = turnedZ * pitchCos - sample.y * pitchSin
+    const flat = sample.kind === 'star'
+    let spunX: number
+    let spunY: number
+    let spunZ: number
+    if (flat) {
+      // the star keeps its face to the viewer: only its anchor travels
+      spunX = sample.x
+      spunY = anchorY + (sample.y - model.starAnchorY)
+      spunZ = anchorZ
+    } else {
+      spunX = sample.x * angleCos - sample.z * angleSin
+      const turnedZ = sample.x * angleSin + sample.z * angleCos
+      // tipping the camera up swaps height for depth, so looking straight down
+      // flattens the cone into rings
+      spunY = sample.y * pitchCos + turnedZ * pitchSin
+      spunZ = turnedZ * pitchCos - sample.y * pitchSin
+    }
     const perspective = focal / (focal - spunZ * scale)
     const screenX = centerX + spunX * scale * perspective
     const screenY = centerY + spunY * scale * perspective
@@ -401,7 +421,7 @@ export function rasterise(
     const turnedNormalZ = sample.nx * angleSin + sample.nz * angleCos
     const normalY = sample.ny * pitchCos + turnedNormalZ * pitchSin
     const normalZ = turnedNormalZ * pitchCos - sample.ny * pitchSin
-    const lambert = normalX * LIGHT_DIR[0] + normalY * LIGHT_DIR[1] + normalZ * LIGHT_DIR[2]
+    const lambert = flat ? 1 : normalX * LIGHT_DIR[0] + normalY * LIGHT_DIR[1] + normalZ * LIGHT_DIR[2]
     const facing = lambert > 0 ? lambert : 0
     const depthLift = 0.72 + 0.28 * ((spunZ / model.radius + 1) / 2)
     let level = (0.2 + 0.8 * facing) * depthLift
@@ -499,6 +519,51 @@ export function buildSnow(count: number): Flake[] {
     size: 0.6 + random() * 1.5,
     drift: 0.2 + random() * 0.6,
   }))
+}
+
+export type ShootingStar = {
+  // all positions are fractions of the canvas, so a resize does not strand one
+  x: number
+  y: number
+  dirX: number
+  dirY: number
+  // seconds since this one set off, or a negative number while it waits
+  age: number
+  span: number
+  speed: number
+  tail: number
+}
+
+const SHOOTING_TAIL = ['*', '=', '-', '-', '·', '·', '.', '.']
+
+export function buildShootingStars(count: number): ShootingStar[] {
+  return Array.from({ length: count }, (_item, index) => ({
+    x: 0,
+    y: 0,
+    dirX: 1,
+    dirY: 1,
+    age: -(2 + index * 3.5),
+    span: 1.6,
+    speed: 0.55,
+    tail: 8,
+  }))
+}
+
+export function resetShootingStar(star: ShootingStar, random: () => number) {
+  const fromLeft = random() < 0.5
+  star.x = fromLeft ? -0.1 : 1.1
+  star.y = random() * 0.45
+  const slope = 0.25 + random() * 0.4
+  star.dirX = fromLeft ? 1 : -1
+  star.dirY = slope
+  star.age = 0
+  star.span = 1.1 + random() * 0.8
+  star.speed = 0.5 + random() * 0.45
+  star.tail = 7 + Math.floor(random() * 7)
+}
+
+export function shootingTailGlyph(step: number): string {
+  return SHOOTING_TAIL[Math.min(SHOOTING_TAIL.length - 1, step)]
 }
 
 export type FieldMark = { x: number; y: number; glyph: string; dim: number }
