@@ -60,7 +60,7 @@ export function FrameTray({ frames, activeId, onPick }: FrameTrayProps) {
           className={`tray-item${frame.id === activeId ? ' active' : ''}`}
           onClick={() => onPick(frame.id)}
         >
-          <span className="swatch frame-swatch" style={{ background: frame.background ?? undefined }}>
+          <span className="swatch frame-swatch" style={{ background: frame.background ?? 'transparent' }}>
             {frame.src ? (
               <img src={frame.src} alt="" />
             ) : (
