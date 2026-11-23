@@ -20,7 +20,7 @@ export const INK = {
   code: '#101d14',
 } as const
 
-const NEEDLES = ['*', '^', '+', '~', '"']
+const NEEDLES = ['*', '*', '*', '^', '^', '+', '~']
 const ORNAMENTS = ['o', 'O', '@']
 const TIERS = 3
 
@@ -66,7 +66,7 @@ export function buildTree(width: number, gridHeight: number): TreeCell[] {
     for (let column = center - half; column <= center + half; column += 1) {
       if (column < 0 || column >= width) continue
       const isEdge = column === center - half || column === center + half
-      const ornamentHere = !isEdge && Math.abs(Math.sin((column * 5 + row * 9) * 1.7)) > 0.86
+      const ornamentHere = !isEdge && Math.abs(Math.sin((column * 5 + row * 9) * 1.7)) > 0.955
       if (ornamentHere) {
         cells.push({ column, row, glyph: pick(ORNAMENTS, column, row), kind: 'ornament' })
       } else {
