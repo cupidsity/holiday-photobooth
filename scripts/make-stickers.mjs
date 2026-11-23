@@ -5,7 +5,7 @@ const OUT = new URL('../public/stickers/', import.meta.url)
 // stickers are photogram silhouettes: in a real cyanotype whatever lies on the
 // paper blocks the sun and prints pale, so every shape is one flat pale field
 const wrap = (art) => `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 100 100">
-  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="#dde7dc" stroke="#dde7dc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
 ${art
   .trim()
   .split('\n')
@@ -186,7 +186,7 @@ const stickers = {
 // so a hairline that looks right at full size disappears at sticker size
 const FINE = 2
 const flashWrap = (art, width, height) => `<svg xmlns="http://www.w3.org/2000/svg" width="${width * 2.4}" height="${height * 2.4}" viewBox="0 0 ${width} ${height}">
-  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="${1.3 * FINE}" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="#dde7dc" stroke="#dde7dc" stroke-width="${1.3 * FINE}" stroke-linecap="round" stroke-linejoin="round">
 ${art
   .trim()
   .split('\n')
@@ -655,7 +655,7 @@ ${body
 writeFileSync(
   new URL('../frames/pressed-border.svg', OUT),
   `<svg xmlns="http://www.w3.org/2000/svg" width="${FRAME_WIDTH}" height="${FRAME_HEIGHT}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}">
-  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
+  <g fill="#dde7dc" stroke="#dde7dc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
 ${frameArt}
   </g>
 </svg>

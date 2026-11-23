@@ -1,6 +1,6 @@
 import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
 import { PlacedSticker, StripOptions, captionFamily, ensureFonts, renderStripBase } from '../lib/render'
-import { GRAIN_TILE, grainDataUrl, grainOpacity } from '../lib/paper'
+import { GRAIN_TILE, STAMP_TILE, grainDataUrl, grainOpacity, stampDataUrl } from '../lib/paper'
 import { STRIP } from '../lib/strip'
 import { LiftIcon, ResizeIcon } from './icons'
 
@@ -136,6 +136,7 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
 
   const previewHeight = surfaceWidth * (STRIP.height / STRIP.width)
   const grainScale = surfaceWidth ? (GRAIN_TILE * surfaceWidth) / STRIP.width : GRAIN_TILE
+  const stampScale = surfaceWidth ? (STAMP_TILE * surfaceWidth) / STRIP.width : STAMP_TILE
 
   return (
     <div
@@ -168,7 +169,22 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
             }}
             onPointerDown={(event) => beginDrag(event, sticker.key, 'move')}
           >
-            {sticker.text ? sticker.text : <img src={sticker.src} alt="" draggable={false} />}
+            {sticker.text ? (
+              sticker.text
+            ) : (
+              <img
+                src={sticker.src}
+                alt=""
+                draggable={false}
+                style={{
+                  maskImage: `url(${stampDataUrl()})`,
+                  WebkitMaskImage: `url(${stampDataUrl()})`,
+                  maskSize: `${stampScale}px`,
+                  WebkitMaskSize: `${stampScale}px`,
+                  opacity: 0.9,
+                }}
+              />
+            )}
 
             {selected && (
               <>

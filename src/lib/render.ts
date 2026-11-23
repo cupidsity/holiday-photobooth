@@ -1,6 +1,6 @@
 import { Frame, loadImage } from './assets'
 import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter, withExposure } from './filters'
-import { layGrain, layHalation, laySpeckle, layVignette } from './paper'
+import { layGrain, layHalation, laySpeckle, layVignette, stampCanvas } from './paper'
 import { FOOTER_HEIGHT, FOOTER_TOP, STRIP, drawCover, photoRect } from './strip'
 
 export type CaptionFace = 'script' | 'serif'
@@ -119,7 +119,27 @@ async function drawSticker(ctx: CanvasRenderingContext2D, sticker: PlacedSticker
   try {
     const art = await loadImage(sticker.src)
     const aspect = art.naturalWidth && art.naturalHeight ? art.naturalHeight / art.naturalWidth : 1
-    ctx.drawImage(art, -size / 2, (-size * aspect) / 2, size, size * aspect)
+    const width = Math.max(1, Math.round(size))
+    const height = Math.max(1, Math.round(size * aspect))
+
+    // the shape is inked on its own first and the stamp mask eats into it,
+    // then it goes down in one piece: masking it on the strip would eat the
+    // photograph underneath as well
+    const inked = document.createElement('canvas')
+    inked.width = width
+    inked.height = height
+    const inkedCtx = inked.getContext('2d')
+    if (!inkedCtx) throw new Error('no 2d context for the stamp')
+    inkedCtx.drawImage(art, 0, 0, width, height)
+    const grain = inkedCtx.createPattern(stampCanvas(), 'repeat')
+    if (grain) {
+      inkedCtx.globalCompositeOperation = 'destination-in'
+      inkedCtx.fillStyle = grain
+      inkedCtx.fillRect(0, 0, width, height)
+    }
+
+    ctx.globalAlpha = 0.9
+    ctx.drawImage(inked, -size / 2, (-size * aspect) / 2, size, size * aspect)
   } catch {
     // skip a sticker whose file disappeared rather than failing the export
   }

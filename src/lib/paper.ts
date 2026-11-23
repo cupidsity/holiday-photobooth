@@ -47,6 +47,50 @@ export function grainDataUrl(): string {
   return grainUrl
 }
 
+export const STAMP_TILE = 96
+
+let stampTile: HTMLCanvasElement | null = null
+let stampUrl: string | null = null
+
+// an alpha mask with clumps in it. a rubber stamp never lays its ink evenly,
+// and that unevenness is most of what tells you something was pressed on
+// rather than printed with the photograph
+function buildStampTile(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = STAMP_TILE
+  canvas.height = STAMP_TILE
+  const ctx = canvas.getContext('2d')!
+  const image = ctx.createImageData(STAMP_TILE, STAMP_TILE)
+  for (let y = 0; y < STAMP_TILE; y += 1) {
+    for (let x = 0; x < STAMP_TILE; x += 1) {
+      // a coarse blotch under a fine speckle, so the ink reads patchy at two
+      // scales rather than looking like television noise
+      const blotchX = Math.floor(x / 7)
+      const blotchY = Math.floor(y / 7)
+      const blotch = Math.abs(Math.sin((blotchX * 7919 + blotchY * 104729) * 0.00041) * 43758.5453) % 1
+      const speckle = Math.abs(Math.sin((x * 12.9898 + y * 78.233) * 1.37) * 43758.5453) % 1
+      const ink = 0.62 + blotch * 0.3 + speckle * 0.12
+      const offset = (y * STAMP_TILE + x) * 4
+      image.data[offset] = 255
+      image.data[offset + 1] = 255
+      image.data[offset + 2] = 255
+      image.data[offset + 3] = Math.round(Math.min(1, ink) * 255)
+    }
+  }
+  ctx.putImageData(image, 0, 0)
+  return canvas
+}
+
+export function stampCanvas(): HTMLCanvasElement {
+  if (!stampTile) stampTile = buildStampTile()
+  return stampTile
+}
+
+export function stampDataUrl(): string {
+  if (!stampUrl) stampUrl = stampCanvas().toDataURL('image/png')
+  return stampUrl
+}
+
 export type PaperLook = {
   // 0 leaves the print smooth, 1 is a heavily textured rag paper
   paper: number
