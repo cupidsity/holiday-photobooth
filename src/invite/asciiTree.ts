@@ -189,8 +189,11 @@ export function buildTree(height: number, density = 1): TreeModel {
   }
 
   // a ribbon wound five times round the cone, sitting just proud of the
-  // needles so it stays in front of them as the tree turns
+  // needles so it stays in front of them as the tree turns. it is three
+  // strands deep rather than one, which is what gives it the weight of a real
+  // piece of tinsel instead of a drawn line
   const garlandSteps = Math.round(2200 * density)
+  const garlandThickness = height * 0.0075
   for (let step = 0; step < garlandSteps; step += 1) {
     const down = 0.14 + (step / garlandSteps) * 0.84
     const tier = (down * 7) % 1
@@ -198,18 +201,21 @@ export function buildTree(height: number, density = 1): TreeModel {
     const theta = down * Math.PI * 10
     const cos = Math.cos(theta)
     const sin = Math.sin(theta)
-    samples.push({
-      x: cos * radius,
-      y: (down - 0.5) * height,
-      z: sin * radius,
-      nx: cos,
-      ny: 0,
-      nz: sin,
-      kind: 'garland',
-      phase: step * 0.4,
-      color: step % 9 < 5 ? '#ffc21f' : '#fff0c0',
-      jitter: 0,
-    })
+    const color = step % 9 < 5 ? '#ffc21f' : '#fff0c0'
+    for (let strand = -1; strand <= 1; strand += 1) {
+      samples.push({
+        x: cos * (radius + strand * garlandThickness * 0.4),
+        y: (down - 0.5) * height + strand * garlandThickness,
+        z: sin * (radius + strand * garlandThickness * 0.4),
+        nx: cos,
+        ny: 0,
+        nz: sin,
+        kind: 'garland',
+        phase: step * 0.4 + strand,
+        color,
+        jitter: 0,
+      })
+    }
   }
 
   const trunkRadius = baseRadius * 0.09
@@ -476,7 +482,7 @@ export function rasterise(
     } else if (sample.kind === 'garland') {
       const shimmer = 0.76 + 0.24 * Math.sin(time * 0.0025 + sample.phase)
       level = 0.95
-      glyph = sample.color === '#ffc21f' ? 'o' : '*'
+      glyph = sample.color === '#ffc21f' ? '@' : 'O'
       ;[red, green, blue] = mixHex('#6b4a08', sample.color ?? '#ffc21f', shimmer)
     } else if (sample.kind === 'gift' || sample.kind === 'ribbon') {
       // wrapping paper is flat colour, so the glyph carries the shading rather
@@ -511,6 +517,8 @@ export function rasterise(
       const spread = [
         [-1, 0],
         [1, 0],
+        [0, -1],
+        [0, 1],
       ]
       for (const [acrossOffset, downOffset] of spread) {
         const nearColumn = column + acrossOffset
