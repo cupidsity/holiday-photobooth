@@ -8,10 +8,10 @@
       "background": "#fffcf0",
       "ink": "#7d1222",
       "art": {
-        "left": 160,
+        "left": 170,
         "top": 50,
-        "width": 679,
-        "height": 1720,
+        "width": 660,
+        "height": 1710,
         "source": {
           "width": 1000,
           "height": 1800
@@ -56,8 +56,8 @@
       "art": {
         "left": 160,
         "top": 30,
-        "width": 679,
-        "height": 1740,
+        "width": 680,
+        "height": 1730,
         "source": {
           "width": 1000,
           "height": 1800
@@ -100,9 +100,9 @@
       "background": "#ffddb5",
       "ink": "#6b3410",
       "art": {
-        "left": 160,
+        "left": 170,
         "top": 0,
-        "width": 679,
+        "width": 660,
         "height": 1770,
         "source": {
           "width": 1000,
