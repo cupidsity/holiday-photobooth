@@ -521,49 +521,90 @@ export function buildSnow(count: number): Flake[] {
   }))
 }
 
+export type TrailMark = { column: number; row: number; litAt: number }
+
 export type ShootingStar = {
-  // all positions are fractions of the canvas, so a resize does not strand one
-  x: number
-  y: number
-  dirX: number
-  dirY: number
-  // seconds since this one set off, or a negative number while it waits
-  age: number
-  span: number
-  speed: number
-  tail: number
+  // the head's position in grid cells, carried as a fraction between them
+  headColumn: number
+  headRow: number
+  stepColumn: number
+  stepRow: number
+  // cells crossed per second
+  pace: number
+  trail: TrailMark[]
+  flyingUntil: number
+  waitingUntil: number
 }
 
-const SHOOTING_TAIL = ['*', '=', '-', '-', '·', '·', '.', '.']
+// how a lit cell cools down once the head has passed it
+const SHOOTING_DECAY = ['*', '+', '=', '-', '~', '·', '.']
+export const SHOOTING_LIFE = 0.85
 
 export function buildShootingStars(count: number): ShootingStar[] {
   return Array.from({ length: count }, (_item, index) => ({
-    x: 0,
-    y: 0,
-    dirX: 1,
-    dirY: 1,
-    age: -(2 + index * 3.5),
-    span: 1.6,
-    speed: 0.55,
-    tail: 8,
+    headColumn: 0,
+    headRow: 0,
+    stepColumn: 1,
+    stepRow: 0.4,
+    pace: 60,
+    trail: [],
+    flyingUntil: 0,
+    waitingUntil: index * 3.5 + 2,
   }))
 }
 
-export function resetShootingStar(star: ShootingStar, random: () => number) {
-  const fromLeft = random() < 0.5
-  star.x = fromLeft ? -0.1 : 1.1
-  star.y = random() * 0.45
-  const slope = 0.25 + random() * 0.4
-  star.dirX = fromLeft ? 1 : -1
-  star.dirY = slope
-  star.age = 0
-  star.span = 1.1 + random() * 0.8
-  star.speed = 0.5 + random() * 0.45
-  star.tail = 7 + Math.floor(random() * 7)
+export function launchShootingStar(
+  star: ShootingStar,
+  columns: number,
+  rows: number,
+  now: number,
+  random: () => number,
+) {
+  // they all run the same way across the sky, which reads as weather rather
+  // than as separate objects going about their own business
+  const slope = 0.3 + random() * 0.45
+  star.headColumn = -4
+  star.headRow = random() * rows * 0.45
+  star.stepColumn = 1
+  star.stepRow = slope
+  star.pace = 45 + random() * 45
+  star.trail = []
+  star.flyingUntil = now + (columns / star.pace) * (0.7 + random() * 0.5)
+  star.waitingUntil = 0
 }
 
-export function shootingTailGlyph(step: number): string {
-  return SHOOTING_TAIL[Math.min(SHOOTING_TAIL.length - 1, step)]
+/**
+ * walks the head forward and lights up every whole cell it crosses. nothing
+ * slides: the streak is made of cells that were switched on at different
+ * moments and are cooling down through the decay ramp at their own pace.
+ */
+export function advanceShootingStar(star: ShootingStar, delta: number, now: number) {
+  const beforeColumn = Math.round(star.headColumn)
+  const beforeRow = Math.round(star.headRow)
+  const travel = star.pace * delta
+  const length = Math.hypot(star.stepColumn, star.stepRow) || 1
+  star.headColumn += (star.stepColumn / length) * travel
+  star.headRow += (star.stepRow / length) * travel
+
+  const afterColumn = Math.round(star.headColumn)
+  const afterRow = Math.round(star.headRow)
+  const acrossSteps = Math.abs(afterColumn - beforeColumn)
+  const downSteps = Math.abs(afterRow - beforeRow)
+  const steps = Math.max(acrossSteps, downSteps)
+  for (let step = 1; step <= steps; step += 1) {
+    star.trail.push({
+      column: beforeColumn + Math.round(((afterColumn - beforeColumn) * step) / steps),
+      row: beforeRow + Math.round(((afterRow - beforeRow) * step) / steps),
+      litAt: now - (delta * (steps - step)) / steps,
+    })
+  }
+
+  while (star.trail.length && now - star.trail[0].litAt > SHOOTING_LIFE) star.trail.shift()
+}
+
+export function shootingGlyph(age: number): string {
+  const step = Math.min(SHOOTING_DECAY.length - 1, Math.floor((age / SHOOTING_LIFE) * SHOOTING_DECAY.length))
+  return SHOOTING_DECAY[step]
 }
 
 export type FieldMark = { x: number; y: number; glyph: string; dim: number }

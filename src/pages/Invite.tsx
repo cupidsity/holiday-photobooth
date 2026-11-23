@@ -1,14 +1,16 @@
 import { PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react'
 import {
   PALETTE,
+  SHOOTING_LIFE,
+  advanceShootingStar,
   buildField,
   buildShootingStars,
   buildSnow,
   buildTree,
   glyphAt,
+  launchShootingStar,
   rasterise,
-  resetShootingStar,
-  shootingTailGlyph,
+  shootingGlyph,
 } from '../invite/asciiTree'
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
 import '../styles/invite.css'
@@ -147,27 +149,31 @@ export function Invite() {
         ctx.fillText(mark.glyph, mark.x * width, mark.y * height)
       }
 
-      // the odd shooting star crossing the back of the sky
+      // the odd shooting star burning across the back of the sky, one cell of
+      // the grid at a time
+      const seconds = now / 1000
       for (const star of shooting) {
-        star.age += delta
-        if (star.age < 0) continue
-        if (star.age > star.span) {
-          if (star.age > star.span + 2.5) resetShootingStar(star, Math.random)
+        if (star.waitingUntil > 0) {
+          if (seconds > star.waitingUntil) launchShootingStar(star, columns, rows, seconds, Math.random)
           continue
         }
-        const travelled = (star.age / star.span) * star.speed
-        const headX = (star.x + star.dirX * travelled) * width
-        const headY = (star.y + star.dirY * travelled) * height
-        const fade = 1 - (star.age / star.span) ** 2
-        for (let step = 0; step < star.tail; step += 1) {
-          const back = step * cellWidth * 1.5
-          ctx.globalAlpha = fade * (1 - step / star.tail) * reveal
-          ctx.fillStyle = step === 0 ? '#ffffff' : PALETTE.snow
-          ctx.fillText(
-            shootingTailGlyph(step),
-            headX - star.dirX * back,
-            headY - star.dirY * back * 0.8,
-          )
+        if (seconds < star.flyingUntil) {
+          advanceShootingStar(star, delta, seconds)
+        } else {
+          while (star.trail.length && seconds - star.trail[0].litAt > SHOOTING_LIFE) star.trail.shift()
+          if (star.trail.length === 0) {
+            star.waitingUntil = seconds + 3 + Math.random() * 7
+            continue
+          }
+        }
+
+        for (const mark of star.trail) {
+          const age = seconds - mark.litAt
+          if (age > SHOOTING_LIFE) continue
+          const heat = 1 - age / SHOOTING_LIFE
+          ctx.globalAlpha = heat * reveal
+          ctx.fillStyle = heat > 0.82 ? '#ffffff' : PALETTE.snow
+          ctx.fillText(shootingGlyph(age), mark.column * cellWidth, mark.row * cellHeight)
         }
       }
 
