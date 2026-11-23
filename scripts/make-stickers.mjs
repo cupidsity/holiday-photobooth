@@ -182,8 +182,11 @@ const stickers = {
 
 // the second family is fine-line flash: hairline florals and spiked
 // cybersigilism, drawn as strokes rather than fields so they read as ink
+// how heavy the fine-line family draws. the pieces are used small on a strip,
+// so a hairline that looks right at full size disappears at sticker size
+const FINE = 2
 const flashWrap = (art, width, height) => `<svg xmlns="http://www.w3.org/2000/svg" width="${width * 2.4}" height="${height * 2.4}" viewBox="0 0 ${width} ${height}">
-  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="${1.3 * FINE}" stroke-linecap="round" stroke-linejoin="round">
 ${art
   .trim()
   .split('\n')
@@ -193,8 +196,8 @@ ${art
 </svg>
 `
 
-const line = (d, width = 1.3) => `<path d="${d}" fill="none" stroke-width="${width}" />`
-const dot = (x, y, radius = 1.2) => `<circle cx="${x}" cy="${y}" r="${radius}" />`
+const line = (d, width = 1.3) => `<path d="${d}" fill="none" stroke-width="${(width * FINE).toFixed(2)}" />`
+const dot = (x, y, radius = 1.2) => `<circle cx="${x}" cy="${y}" r="${(radius * 1.6).toFixed(2)}" />`
 
 // a five petal blossom seen face on, the size of a fingernail
 const blossom = (cx, cy, radius, rotate = 0) =>
@@ -203,7 +206,7 @@ const blossom = (cx, cy, radius, rotate = 0) =>
     const angle = (index * 72 * Math.PI) / 180
     const px = cx + Math.cos(angle - Math.PI / 2) * radius
     const py = cy + Math.sin(angle - Math.PI / 2) * radius
-    return `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="${(radius * 0.52).toFixed(1)}" ry="${(radius * 0.78).toFixed(1)}" transform="rotate(${(index * 72).toFixed(0)} ${px.toFixed(1)} ${py.toFixed(1)})" fill="none" stroke-width="1.1" />`
+    return `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="${(radius * 0.52).toFixed(1)}" ry="${(radius * 0.78).toFixed(1)}" transform="rotate(${(index * 72).toFixed(0)} ${px.toFixed(1)} ${py.toFixed(1)})" fill="none" stroke-width="${(1.1 * FINE).toFixed(2)}" />`
   }).join('') +
   dot(cx, cy, radius * 0.22) +
   '</g>'
@@ -229,7 +232,7 @@ const spike = (x, y, angle, length, width) => {
   const tipY = y + Math.sin(rad) * length
   const baseX = Math.cos(rad + Math.PI / 2) * width
   const baseY = Math.sin(rad + Math.PI / 2) * width
-  return `<path d="M${(x + baseX).toFixed(1)} ${(y + baseY).toFixed(1)} Q${(x + Math.cos(rad) * length * 0.55).toFixed(1)} ${(y + Math.sin(rad) * length * 0.55).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)} Q${(x - baseX + Math.cos(rad) * length * 0.2).toFixed(1)} ${(y - baseY + Math.sin(rad) * length * 0.2).toFixed(1)} ${(x - baseX).toFixed(1)} ${(y - baseY).toFixed(1)} Z" stroke-width="0.8" />`
+  return `<path d="M${(x + baseX).toFixed(1)} ${(y + baseY).toFixed(1)} Q${(x + Math.cos(rad) * length * 0.55).toFixed(1)} ${(y + Math.sin(rad) * length * 0.55).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)} Q${(x - baseX + Math.cos(rad) * length * 0.2).toFixed(1)} ${(y - baseY + Math.sin(rad) * length * 0.2).toFixed(1)} ${(x - baseX).toFixed(1)} ${(y - baseY).toFixed(1)} Z" stroke-width="0" />`
 }
 
 const fourStar = (cx, cy, radius, thin = 0.3) =>
@@ -638,7 +641,7 @@ const frameArt = placements
     const body = typeof piece === 'string' ? piece : piece.art
     const width = typeof piece === 'string' ? 100 : piece.width
     const height = typeof piece === 'string' ? 100 : piece.height
-    const strokeWidth = typeof piece === 'string' ? 0 : 1.3
+    const strokeWidth = typeof piece === 'string' ? 0 : 1.3 * FINE
     return `  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale}) translate(${-width / 2} ${-height / 2})" stroke-width="${strokeWidth}">
 ${body
       .trim()

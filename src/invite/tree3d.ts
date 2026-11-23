@@ -50,10 +50,10 @@ export type TreeShape = {
  * against the one below it. that is what gives it a body to rotate rather than
  * a silhouette to look at.
  */
-export function buildTree3D(height: number): TreeShape {
+export function buildTree3D(height: number, density = 1): TreeShape {
   const random = makeRandom(20261123)
   const points: TreePoint[] = []
-  const layers = 58
+  const layers = Math.round(68 * density)
   const baseRadius = height * 0.34
 
   for (let layer = 0; layer < layers; layer += 1) {
@@ -62,13 +62,13 @@ export function buildTree3D(height: number): TreeShape {
     const tier = (down * 7) % 1
     const radius = baseRadius * (0.06 + down * 0.94) * (0.78 + tier * 0.22)
     const y = (down - 0.5) * height
-    const count = Math.max(6, Math.floor(radius / 4.1))
+    const count = Math.max(8, Math.floor(radius / (3.1 / density)))
 
     for (let index = 0; index < count; index += 1) {
-      if (random() < 0.075) continue
+      if (random() < 0.04) continue
       const theta = (index / count) * Math.PI * 2 + layer * 0.29
       const reach = radius * (0.82 + random() * 0.2)
-      const lit = down > 0.12 && random() < 0.05
+      const lit = down > 0.1 && random() < 0.08
       points.push({
         x: Math.cos(theta) * reach,
         y,
@@ -80,14 +80,14 @@ export function buildTree3D(height: number): TreeShape {
           ? PALETTE.light[Math.floor(random() * PALETTE.light.length)]
           : PALETTE.leaf[Math.floor(random() * PALETTE.leaf.length)],
         kind: lit ? 'light' : 'leaf',
-        weight: lit ? 1.25 : 1,
+        weight: lit ? 1.45 : 1,
         phase: random() * Math.PI * 2,
       })
     }
   }
 
   // a garland wound twice round the tree, which reads as depth as it turns
-  const garlandSteps = 130
+  const garlandSteps = Math.round(150 * density)
   for (let turn = 0; turn < 2; turn += 1) {
     for (let step = 0; step < garlandSteps; step += 1) {
       const down = 0.18 + (step / garlandSteps) * 0.78
@@ -107,10 +107,10 @@ export function buildTree3D(height: number): TreeShape {
     }
   }
 
-  const trunkRadius = baseRadius * 0.1
-  for (let ring = 0; ring < 7; ring += 1) {
-    for (let index = 0; index < 7; index += 1) {
-      const theta = (index / 7) * Math.PI * 2 + ring * 0.4
+  const trunkRadius = baseRadius * 0.11
+  for (let ring = 0; ring < 8; ring += 1) {
+    for (let index = 0; index < 9; index += 1) {
+      const theta = (index / 9) * Math.PI * 2 + ring * 0.4
       points.push({
         x: Math.cos(theta) * trunkRadius,
         y: height * 0.5 + ring * (height * 0.018),
@@ -132,7 +132,7 @@ export function buildTree3D(height: number): TreeShape {
     glyph: '✦', // taste-skill-ignore
     color: PALETTE.star,
     kind: 'star',
-    weight: 2.6,
+    weight: 4.2,
     phase: 0,
   })
 

@@ -120,8 +120,14 @@ export function Invite() {
     let lastCodeState: boolean | null = null
 
     const TREE_HEIGHT = 1000
-    const tree = buildTree3D(TREE_HEIGHT)
-    const snow = buildSnow(150)
+    // a tv or a laptop draws the full tree; a phone and anything with few cores
+    // gets a lighter one rather than a slideshow
+    const lightweight =
+      window.matchMedia('(pointer: coarse)').matches ||
+      window.innerWidth < 700 ||
+      (navigator.hardwareConcurrency ?? 8) <= 4
+    const tree = buildTree3D(TREE_HEIGHT, lightweight ? 0.62 : 1)
+    const snow = buildSnow(lightweight ? 90 : 170)
     const landings = assignLandings(tree.points, grid.cells, grid.size, TREE_HEIGHT)
     const order = Array.from({ length: tree.points.length }, (_item, index) => index)
 
@@ -217,7 +223,7 @@ export function Invite() {
 
       projected.sort((left, right) => left.depth - right.depth)
 
-      const baseSize = 11 * scale
+      const baseSize = 14 * scale
       let currentFont = 0
       for (const seat of projected) {
         const { point, landing } = seat
@@ -237,11 +243,21 @@ export function Invite() {
           ctx.font = `700 ${size}px "IBM Plex Mono", ui-monospace, monospace` // taste-skill-ignore
         }
 
-        ctx.globalAlpha = (0.34 + depthLight * 0.66) * twinkle * fade
+        ctx.globalAlpha = (0.42 + depthLight * 0.58) * twinkle * fade
         ctx.fillStyle = mixHex(point.color, PALETTE.ink, settle)
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
+        // only the lights and the star carry a glow, which is what makes them
+        // read as lit rather than just differently coloured
+        const glowing = (point.kind === 'light' || point.kind === 'star') && turning > 0.2
+        if (glowing) {
+          ctx.shadowBlur = 16 * scale * turning
+          ctx.shadowColor = point.color
+        }
         ctx.fillText(point.glyph, seat.screenX, seat.screenY)
+        if (glowing) {
+          ctx.shadowBlur = 0
+        }
 
         // once everything has arrived the glyphs give way to solid modules, so
         // the last frame is a code a phone can actually read
