@@ -7,6 +7,7 @@ import {
   STRIP,
   Window,
   artScale,
+  bleedTop,
   drawCover,
   stripHeight,
 } from './strip'
@@ -110,16 +111,6 @@ function drawCaption(ctx: CanvasRenderingContext2D, options: StripOptions) {
   ctx.restore()
 }
 
-function drawEmptyCell(ctx: CanvasRenderingContext2D, frame: Frame, index: number) {
-  const rect = windowsOf(frame)[index]
-  if (!rect) return
-  ctx.save()
-  ctx.globalAlpha = 0.14
-  ctx.fillStyle = frame.ink
-  ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
-  ctx.restore()
-}
-
 async function drawSticker(ctx: CanvasRenderingContext2D, sticker: PlacedSticker, options: StripOptions) {
   const size = sticker.size * STRIP.width
   const centerX = sticker.x * STRIP.width
@@ -189,6 +180,12 @@ export async function renderStripBase(
   const nativeFilter = supportsCanvasFilter()
 
   const height = stripHeight(frame.art)
+  // everything below sits on the strip itself; the art's overhang lives in the
+  // space above it. the preview keeps the overhang in its own dom layer, so it
+  // only needs the strip
+  const bleed = forPreview ? 0 : bleedTop(frame.art)
+  ctx.save()
+  ctx.translate(0, bleed)
   if (frame.background) {
     ctx.save()
     ctx.fillStyle = frame.background
@@ -198,10 +195,9 @@ export async function renderStripBase(
 
   for (let index = 0; index < STRIP.photoCount; index += 1) {
     const shot = shots[index]
-    if (!shot) {
-      drawEmptyCell(ctx, frame, index)
-      continue
-    }
+    // a window with no photo in it is left clear rather than tinted: the only
+    // strip that has one is the blank sample on the first screen
+    if (!shot) continue
     const rect = windowsOf(frame)[index]
     if (!rect) continue
     ctx.save()
@@ -214,7 +210,10 @@ export async function renderStripBase(
   }
 
   laySpeckle(ctx, STRIP.width, height, { paper: options.paper })
-  if (forPreview) return
+  if (forPreview) {
+    ctx.restore()
+    return
+  }
 
   for (const sticker of options.stickers) {
     await drawSticker(ctx, sticker, options)
@@ -255,12 +254,13 @@ export async function renderStripBase(
   // the grain goes on last so it runs across photos, silhouettes and paper
   // alike, which is what stops anything looking stuck on afterwards
   layGrain(ctx, STRIP.width, height, { paper: options.paper })
+  ctx.restore()
 }
 
 export async function renderStrip(options: StripOptions): Promise<HTMLCanvasElement> {
   const canvas = document.createElement('canvas')
   canvas.width = STRIP.width
-  canvas.height = stripHeight(options.frame.art)
+  canvas.height = stripHeight(options.frame.art) + bleedTop(options.frame.art)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('this browser will not give us a 2d canvas')
 

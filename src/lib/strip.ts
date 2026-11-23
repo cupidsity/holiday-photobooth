@@ -18,6 +18,9 @@ export type ArtBox = {
   height: number
   // the size of the file the art was measured in
   source: { width: number; height: number }
+  // how far the art carries on above the crop: the bow, the snowflakes, the
+  // gingerbread man. the strip is drawn taller by this much so they stay whole
+  bleedTop?: number
 }
 
 // how much a frame's art is scaled to meet the strip's width
@@ -28,6 +31,11 @@ export function artScale(art?: ArtBox): number {
 // a frame as tall as its own art, rather than every frame forced to one height
 export function stripHeight(art?: ArtBox): number {
   return art ? Math.round(art.height * artScale(art)) : STRIP.height
+}
+
+// the room above the strip that the overhanging part of the art needs
+export function bleedTop(art?: ArtBox): number {
+  return art?.bleedTop ? Math.round(art.bleedTop * artScale(art)) : 0
 }
 
 // where the photos sit when a frame does not bring its own windows: the shape

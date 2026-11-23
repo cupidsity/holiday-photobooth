@@ -348,7 +348,8 @@
   width: min(80vw, 280px);
   touch-action: pan-y;
   user-select: none;
-  overflow: hidden;
+  /* the frame's overhang is allowed out of the top; the bleed layer clips it */
+  overflow: visible;
 }
 
 .strip-canvas,
@@ -368,6 +369,17 @@
 /* a frame that brings its own art box sets its own width and offset */
 .strip-frame-art {
   right: auto;
+}
+
+/* the band above the strip where the bow, the snowflakes and the gingerbread
+   man carry on past the crop */
+.strip-bleed {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .strip-caption {

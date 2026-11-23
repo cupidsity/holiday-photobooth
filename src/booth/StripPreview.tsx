@@ -145,6 +145,8 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
   const previewHeight = surfaceWidth * (tall / STRIP.width)
   // one source pixel of the frame's file, in preview pixels
   const sourceToPreview = options.frame.art ? surfaceWidth / options.frame.art.width : 0
+  // the overhang above the strip, in preview pixels
+  const bleed = (options.frame.art?.bleedTop ?? 0) * sourceToPreview
   const grainScale = surfaceWidth ? (GRAIN_TILE * surfaceWidth) / STRIP.width : GRAIN_TILE
   const stampScale = surfaceWidth ? (STAMP_TILE * surfaceWidth) / STRIP.width : STAMP_TILE
 
@@ -223,6 +225,11 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
       })}
 
       {options.frame.src && (
+        <div
+          className="strip-bleed"
+          aria-hidden="true"
+          style={options.frame.art ? { top: `${-bleed}px` } : undefined}
+        >
         <img
           className="strip-frame-art"
           src={options.frame.src}
@@ -236,11 +243,12 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
                   width: `${options.frame.art.source.width * sourceToPreview}px`,
                   height: `${options.frame.art.source.height * sourceToPreview}px`,
                   left: `${-options.frame.art.left * sourceToPreview}px`,
-                  top: `${-options.frame.art.top * sourceToPreview}px`,
+                  top: `${bleed - options.frame.art.top * sourceToPreview}px`,
                 }
               : undefined
           }
         />
+        </div>
       )}
 
       {/* the caption rides on top of the frame art, the way the export has it.

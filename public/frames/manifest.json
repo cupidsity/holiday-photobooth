@@ -15,7 +15,8 @@
         "source": {
           "width": 1000,
           "height": 1800
-        }
+        },
+        "bleedTop": 80
       },
       "windows": [
         {
@@ -61,7 +62,8 @@
         "source": {
           "width": 1000,
           "height": 1800
-        }
+        },
+        "bleedTop": 90
       },
       "windows": [
         {
@@ -107,7 +109,8 @@
         "source": {
           "width": 1000,
           "height": 1800
-        }
+        },
+        "bleedTop": 130
       },
       "windows": [
         {
