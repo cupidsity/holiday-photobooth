@@ -1,28 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CameraStage } from '../booth/CameraStage'
-import { FilterTray, FrameTray, StickerTray } from '../booth/Trays'
+import { Dial, FilterTray, FrameTray, StickerTray } from '../booth/Trays'
 import { StripPreview } from '../booth/StripPreview'
 import { useCamera } from '../booth/useCamera'
 import { Frame, PAPER_FRAMES, Sticker, loadFrames, loadStickers } from '../lib/assets'
 import { PARTY_NAME, PARTY_YEAR } from '../lib/config'
-import { cssFilter, filterById } from '../lib/filters'
-import { PlacedSticker, StripOptions, renderStrip } from '../lib/render'
+import { cssFilter, filterById, withExposure } from '../lib/filters'
+import { CaptionFace, PlacedSticker, StripOptions, renderStrip } from '../lib/render'
 import { PHOTO_HEIGHT, PHOTO_WIDTH, drawCover } from '../lib/strip'
 import { canShareStrip, saveStrip, shareStrip } from '../lib/download'
 import '../styles/booth.css'
 
-type Phase = 'intro' | 'shoot' | 'edit'
-type Tab = 'frame' | 'filter' | 'stickers' | 'caption'
+type Phase = 'intro' | 'shoot' | 'develop' | 'edit'
+type Tab = 'look' | 'press' | 'words' | 'paper'
 
 const COUNTDOWN_FROM = 3
 const BETWEEN_SHOTS_MS = 900
+const DEVELOP_MS = 5200
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 function todayLabel(): string {
-  return new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
+  return new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export function Booth() {
@@ -31,14 +32,17 @@ export function Booth() {
   const sequenceRef = useRef(0)
 
   const [phase, setPhase] = useState<Phase>('intro')
-  const [tab, setTab] = useState<Tab>('frame')
+  const [tab, setTab] = useState<Tab>('look')
   const [shots, setShots] = useState<(HTMLCanvasElement | null)[]>([null, null, null])
   const [thumbnails, setThumbnails] = useState<(string | null)[]>([null, null, null])
   const [frames, setFrames] = useState<Frame[]>(PAPER_FRAMES)
   const [stickerKinds, setStickerKinds] = useState<Sticker[]>([])
-  const [frameId, setFrameId] = useState('garland')
-  const [filterId, setFilterId] = useState('noel')
-  const [caption, setCaption] = useState(`${PARTY_NAME} ${PARTY_YEAR}`)
+  const [frameId, setFrameId] = useState('sunprint')
+  const [filterId, setFilterId] = useState('cyanotype')
+  const [exposure, setExposure] = useState(0.52)
+  const [paper, setPaper] = useState(0.42)
+  const [captionFace, setCaptionFace] = useState<CaptionFace>('script')
+  const [caption, setCaption] = useState(PARTY_NAME)
   const [subcaption, setSubcaption] = useState(todayLabel())
   const [placed, setPlaced] = useState<PlacedSticker[]>([])
   const [selectedSticker, setSelectedSticker] = useState<string | null>(null)
@@ -52,7 +56,7 @@ export function Booth() {
   useEffect(() => {
     loadFrames().then((loaded) => {
       setFrames(loaded)
-      setFrameId((current) => (loaded.some((frame) => frame.id === current) ? current : loaded[0]?.id ?? 'cream'))
+      setFrameId((current) => (loaded.some((frame) => frame.id === current) ? current : loaded[0]?.id ?? 'sunprint'))
     })
     loadStickers().then(setStickerKinds)
   }, [])
@@ -62,15 +66,8 @@ export function Booth() {
   const filledShots = shots.filter((shot): shot is HTMLCanvasElement => !!shot)
 
   const stripOptions: StripOptions = useMemo(
-    () => ({
-      shots: shots.map((shot) => shot ?? (undefined as unknown as HTMLCanvasElement)),
-      frame,
-      filter,
-      caption,
-      subcaption,
-      stickers: placed,
-    }),
-    [shots, frame, filter, caption, subcaption, placed],
+    () => ({ shots, frame, filter, exposure, paper, caption, subcaption, captionFace, stickers: placed }),
+    [shots, frame, filter, exposure, paper, caption, subcaption, captionFace, placed],
   )
 
   const grabFrame = useCallback((): HTMLCanvasElement | null => {
@@ -85,7 +82,7 @@ export function Booth() {
       ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)
     }
-    // photos are stored unfiltered so the filter stays changeable after the
+    // photos are stored undeveloped so the look stays changeable after the
     // shoot, and the strip renderer is the only thing that bakes it in
     drawCover(ctx, video, video.videoWidth, video.videoHeight, 0, 0, canvas.width, canvas.height)
     return canvas
@@ -124,11 +121,19 @@ export function Booth() {
 
       if (sequenceRef.current !== runId) return
       setShooting(false)
-      setPhase('edit')
+      setPhase('develop')
       camera.stop()
     },
     [camera, grabFrame],
   )
+
+  // the strip slides out of the slot and the blue comes up in it, the way a
+  // sunprint darkens once it is out of the sun
+  useEffect(() => {
+    if (phase !== 'develop') return
+    const timer = setTimeout(() => setPhase('edit'), DEVELOP_MS)
+    return () => clearTimeout(timer)
+  }, [phase])
 
   function openBooth() {
     // safari only hands over the camera when getUserMedia is reached straight
@@ -171,12 +176,12 @@ export function Booth() {
         stickerId: sticker.id,
         src: sticker.src,
         text: sticker.text,
-        // new stickers land slightly off centre and nudge down the strip so a
-        // handful dropped in a row do not stack perfectly on top of each other
-        x: 0.5 + (current.length % 3 - 1) * 0.16,
-        y: 0.22 + (current.length % 4) * 0.18,
-        size: sticker.text ? 0.14 : 0.22,
-        rotation: ((current.length % 5) - 2) * 0.12,
+        // each new piece lands a little off the last one so a handful pressed
+        // in a row do not stack perfectly on top of each other
+        x: 0.5 + ((current.length % 3) - 1) * 0.17,
+        y: 0.2 + (current.length % 4) * 0.19,
+        size: sticker.text ? 0.14 : 0.26,
+        rotation: ((current.length % 5) - 2) * 0.14,
       },
     ])
     setSelectedSticker(key)
@@ -187,7 +192,7 @@ export function Booth() {
     try {
       const canvas = await renderStrip(stripOptions)
       await saveStrip(canvas)
-      setNote('strip saved to your downloads')
+      setNote('saved to your downloads')
     } catch {
       setNote('saving fell over, try again')
     } finally {
@@ -199,7 +204,7 @@ export function Booth() {
     setBusy('sharing')
     try {
       const canvas = await renderStrip(stripOptions)
-      const shared = await shareStrip(canvas, `${caption} 📸`)
+      const shared = await shareStrip(canvas, caption)
       if (!shared) await saveStrip(canvas)
     } catch {
       setNote('sharing fell over, try saving instead')
@@ -210,18 +215,18 @@ export function Booth() {
 
   if (phase === 'intro') {
     return (
-      <div className="app booth intro">
+      <div className="booth intro">
         <div className="intro-card">
-          <h1 className="wordmark">
-            holiday <span>photobooth</span>
-          </h1>
+          <p className="intro-mark">sunprint booth</p>
+          <h1 className="intro-title">Three photographs, one blue strip.</h1>
           <p className="intro-copy">
-            three photos, one strip. pick a frame, add stickers, save it to your phone.
+            The booth counts you in three times, then the strip drops out of the slot and develops.
+            Press flowers and sigils into it, set the exposure, keep it.
           </p>
           <button className="button" onClick={openBooth}>
-            start the booth
+            Start the booth
           </button>
-          <p className="subtle">your camera stays on your device — nothing is uploaded</p>
+          <p className="intro-foot">Your camera never leaves this device. Nothing is uploaded.</p>
         </div>
       </div>
     )
@@ -230,16 +235,17 @@ export function Booth() {
   if (phase === 'shoot') {
     const pending = shots.filter((shot) => !shot).length
     return (
-      <div className="app booth">
-        <h1 className="wordmark small">
-          holiday <span>photobooth</span>
-        </h1>
+      <div className="booth shoot">
+        <header className="bar">
+          <span className="mark">sunprint booth</span>
+          <span className="bar-note">{filledShots.length} of 3 exposed</span>
+        </header>
 
         <CameraStage
           videoRef={videoRef}
           camera={camera.state}
           mirrored={mirrored}
-          filterCss={cssFilter(filter)}
+          filterCss={cssFilter(withExposure(filter, exposure))}
           countdown={countdown}
           flashing={flashing}
           shotCount={filledShots.length}
@@ -252,7 +258,11 @@ export function Booth() {
         <div className="shot-rail">
           {thumbnails.map((thumb, index) => (
             <div key={index} className={`shot-slot${thumb ? ' filled' : ''}`}>
-              {thumb ? <img src={thumb} alt={`shot ${index + 1}`} /> : <span>{index + 1}</span>}
+              {thumb ? (
+                <img src={thumb} alt={`exposure ${index + 1}`} style={{ filter: cssFilter(withExposure(filter, exposure)) }} />
+              ) : (
+                <span>{index + 1}</span>
+              )}
             </div>
           ))}
         </div>
@@ -261,8 +271,8 @@ export function Booth() {
 
         <div className="actions">
           {shooting ? (
-            <button className="button ghost" onClick={cancelSequence}>
-              stop
+            <button className="button quiet" onClick={cancelSequence}>
+              Stop
             </button>
           ) : (
             <button
@@ -270,26 +280,35 @@ export function Booth() {
               disabled={camera.state.status !== 'live'}
               onClick={() => runSequence(shots.map((shot, index) => (shot ? -1 : index)).filter((index) => index >= 0))}
             >
-              {pending === 3 ? 'take 3 photos' : `take ${pending} more`}
+              {pending === 3 ? 'Take three' : `Take ${pending} more`}
             </button>
           )}
           {filledShots.length === 3 && !shooting && (
-            <button className="button gold" onClick={() => setPhase('edit')}>
-              to the strip
+            <button className="button quiet" onClick={() => setPhase('develop')}>
+              To the strip
             </button>
           )}
         </div>
+      </div>
+    )
+  }
 
-        <details className="look-ahead">
-          <summary>pick a look first</summary>
-          <FilterTray activeId={filterId} onPick={setFilterId} thumbnail={thumbnails.find(Boolean) ?? null} />
-        </details>
+  if (phase === 'develop') {
+    return (
+      <div className="booth develop" onClick={() => setPhase('edit')}>
+        <div className="slot-housing">
+          <div className="slot-mouth" aria-hidden="true" />
+          <div className="dropping">
+            <StripPreview options={stripOptions} selectedKey={null} onSelect={() => {}} onChange={() => {}} />
+          </div>
+        </div>
+        <p className="develop-note">developing…</p>
       </div>
     )
   }
 
   return (
-    <div className="app booth edit">
+    <div className="booth edit">
       <div className="edit-layout">
         <div className="strip-column">
           <StripPreview
@@ -302,72 +321,99 @@ export function Booth() {
 
         <div className="panel">
           <div className="tabs">
-            {(['frame', 'filter', 'stickers', 'caption'] as Tab[]).map((name) => (
-              <button
-                key={name}
-                className={`tab${tab === name ? ' active' : ''}`}
-                onClick={() => setTab(name)}
-              >
+            {(['look', 'press', 'words', 'paper'] as Tab[]).map((name) => (
+              <button key={name} className={`tab${tab === name ? ' active' : ''}`} onClick={() => setTab(name)}>
                 {name}
               </button>
             ))}
           </div>
 
-          {tab === 'frame' && <FrameTray frames={frames} activeId={frameId} onPick={setFrameId} />}
-          {tab === 'filter' && (
-            <FilterTray activeId={filterId} onPick={setFilterId} thumbnail={thumbnails.find(Boolean) ?? null} />
+          {tab === 'look' && (
+            <>
+              <FilterTray
+                activeId={filterId}
+                exposure={exposure}
+                onPick={setFilterId}
+                thumbnail={thumbnails.find(Boolean) ?? null}
+              />
+              <Dial
+                label="Exposure"
+                note={exposure < 0.4 ? 'under' : exposure > 0.65 ? 'deep' : 'even'}
+                value={exposure}
+                onChange={setExposure}
+              />
+              <Dial
+                label="Paper"
+                note={paper < 0.25 ? 'smooth' : paper > 0.6 ? 'rough rag' : 'cold press'}
+                value={paper}
+                onChange={setPaper}
+              />
+            </>
           )}
-          {tab === 'stickers' && (
+
+          {tab === 'press' && (
             <>
               <StickerTray stickers={stickerKinds} onPick={addSticker} />
               <p className="hint">
-                drag to move. tap a sticker, then pull the ⤡ corner to resize and spin it, or × to bin it.
+                Drag to move it. Tap one, then pull the ⤡ corner to resize and turn, or × to lift it off.
               </p>
               {placed.length > 0 && (
-                <button className="button ghost small" onClick={() => setPlaced([])}>
-                  clear stickers
+                <button className="button quiet small" onClick={() => setPlaced([])}>
+                  Clear the strip
                 </button>
               )}
             </>
           )}
-          {tab === 'caption' && (
+
+          {tab === 'words' && (
             <div className="caption-fields">
+              <div className="face-switch">
+                {(['script', 'serif'] as CaptionFace[]).map((face) => (
+                  <button
+                    key={face}
+                    className={`face${captionFace === face ? ' active' : ''} ${face}`}
+                    onClick={() => setCaptionFace(face)}
+                  >
+                    {face}
+                  </button>
+                ))}
+              </div>
               <label>
-                big line
+                Name
                 <input value={caption} maxLength={28} onChange={(event) => setCaption(event.target.value)} />
               </label>
               <label>
-                small line
+                Date
                 <input value={subcaption} maxLength={34} onChange={(event) => setSubcaption(event.target.value)} />
               </label>
             </div>
           )}
 
+          {tab === 'paper' && <FrameTray frames={frames} activeId={frameId} onPick={setFrameId} />}
+
           {note && <p className="note">{note}</p>}
 
           <div className="actions stacked">
             <button className="button" disabled={!!busy} onClick={handleSave}>
-              {busy === 'saving' ? 'saving…' : 'save strip'}
+              {busy === 'saving' ? 'Saving…' : 'Save the strip'}
             </button>
             {canShareStrip() && (
-              <button className="button gold" disabled={!!busy} onClick={handleShare}>
-                {busy === 'sharing' ? 'sharing…' : 'share'}
+              <button className="button quiet" disabled={!!busy} onClick={handleShare}>
+                {busy === 'sharing' ? 'Sharing…' : 'Share'}
               </button>
             )}
-            <button className="button ghost" onClick={() => retake([0, 1, 2])}>
-              retake all
-            </button>
             <div className="retake-row">
               {[0, 1, 2].map((index) => (
-                <button key={index} className="button ghost small" onClick={() => retake([index])}>
-                  redo {index + 1}
+                <button key={index} className="button quiet small" onClick={() => retake([index])}>
+                  Redo {index + 1}
                 </button>
               ))}
             </div>
-            <button className="button ghost small" onClick={startOver}>
-              start over
+            <button className="button quiet small" onClick={startOver}>
+              Start over
             </button>
           </div>
+          <p className="panel-foot">{PARTY_NAME} · {PARTY_YEAR}</p>
         </div>
       </div>
     </div>

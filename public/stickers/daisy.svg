@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 100 100">
-  <defs>
-    <g id="art" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="50" cy="42" r="9" />
-      <path d="M50 33 C44 20 56 20 50 33 Z" />
-      <path d="M59 38 C72 30 73 42 59 38 Z" />
-      <path d="M57 50 C68 60 57 65 57 50 Z" />
-      <path d="M43 50 C43 65 32 60 43 50 Z" />
-      <path d="M41 38 C27 42 28 30 41 38 Z" />
-      <path d="M50 51 C52 66 50 78 46 90" />
-      <path d="M49 68 C40 66 34 60 33 52 C42 52 48 58 49 68 Z" />
-    </g>
-  </defs>
-  <use href="#art" stroke="#0b1711" stroke-opacity="0.4" stroke-width="9" />
-  <use href="#art" stroke="#f8f2e6" stroke-width="4" />
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 100 100">
+  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(0 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(45 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(90 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(135 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(180 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(225 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(270 50 46)" />
+    <ellipse cx="50" cy="29" rx="7" ry="17" transform="rotate(315 50 46)" />
+    <circle cx="50" cy="46" r="9" />
+    <path d="M50 94 C48 76 52 76 50 58" stroke-width="3" fill="none" />
+    <ellipse cx="40" cy="74" rx="5" ry="11" transform="rotate(35 40 74)" />
+    <ellipse cx="60" cy="82" rx="4" ry="10" transform="rotate(-35 60 82)" />
+  </g>
 </svg>

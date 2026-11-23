@@ -1,10 +1,13 @@
 import { Frame, loadImage } from './assets'
-import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter } from './filters'
+import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter, withExposure } from './filters'
+import { layGrain, laySpeckle } from './paper'
 import { FOOTER_HEIGHT, FOOTER_TOP, STRIP, drawCover, photoRect } from './strip'
+
+export type CaptionFace = 'script' | 'serif'
 
 export type PlacedSticker = {
   // unique per placement, not per sticker kind, since the same sticker can be
-  // dropped on the strip more than once
+  // pressed onto the strip more than once
   key: string
   stickerId: string
   src?: string
@@ -13,51 +16,66 @@ export type PlacedSticker = {
   // agree no matter what size the preview is drawn at
   x: number
   y: number
-  // for line art this is the width as a fraction of the strip width, for a word
-  // sticker it is the font size as a fraction of the strip width
+  // for a silhouette this is the width as a fraction of the strip width, for a
+  // word it is the font size as a fraction of the strip width
   size: number
   rotation: number
 }
 
 export type StripOptions = {
-  shots: HTMLCanvasElement[]
+  shots: (HTMLCanvasElement | null)[]
   frame: Frame
   filter: PhotoFilter
+  // how long the print sat in the sun: deeper blue, more contrast
+  exposure: number
+  // how much the paper's grain and flecks come through
+  paper: number
   caption: string
   subcaption: string
+  captionFace: CaptionFace
   stickers: PlacedSticker[]
 }
 
-export const CAPTION_FONT = 'Caveat'
+export const SCRIPT_FONT = '"Caveat", "Brush Script MT", cursive'
+export const SERIF_FONT = '"Instrument Serif", "Iowan Old Style", Georgia, serif'
+
+export function captionFamily(face: CaptionFace): string {
+  return face === 'script' ? SCRIPT_FONT : SERIF_FONT
+}
 
 export async function ensureFonts() {
   if (!document.fonts) return
   try {
     await Promise.all([
-      document.fonts.load(`700 96px "${CAPTION_FONT}"`),
-      document.fonts.load(`400 64px "${CAPTION_FONT}"`),
+      document.fonts.load('700 96px "Caveat"'),
+      document.fonts.load('400 72px "Instrument Serif"'),
     ])
   } catch {
-    // the caption just falls back to a cursive system font
+    // the caption just falls back to a system face
   }
 }
 
-function drawCaption(ctx: CanvasRenderingContext2D, frame: Frame, caption: string, subcaption: string) {
+function drawCaption(ctx: CanvasRenderingContext2D, options: StripOptions) {
+  const { frame, caption, subcaption, captionFace } = options
+  const family = captionFamily(captionFace)
   const centerX = STRIP.width / 2
   const baseY = FOOTER_TOP + FOOTER_HEIGHT / 2
+  const bigSize = captionFace === 'script' ? 88 : 62
+  const smallSize = captionFace === 'script' ? 46 : 32
+
   ctx.save()
   ctx.fillStyle = frame.ink
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
   if (caption.trim()) {
-    ctx.font = `700 88px "${CAPTION_FONT}", "Brush Script MT", cursive`
-    ctx.fillText(caption, centerX, baseY - 26, STRIP.width - STRIP.sidePadding * 2)
+    ctx.font = `${captionFace === 'script' ? 700 : 400} ${bigSize}px ${family}`
+    ctx.fillText(caption, centerX, baseY - 22, STRIP.width - STRIP.sidePadding * 2)
   }
   if (subcaption.trim()) {
-    ctx.globalAlpha = 0.75
-    ctx.font = `400 46px "${CAPTION_FONT}", "Brush Script MT", cursive`
-    ctx.fillText(subcaption, centerX, baseY + 52, STRIP.width - STRIP.sidePadding * 2)
+    ctx.globalAlpha = 0.72
+    ctx.font = `400 ${smallSize}px ${family}`
+    ctx.fillText(subcaption, centerX, baseY + 46, STRIP.width - STRIP.sidePadding * 2)
   }
   ctx.restore()
 }
@@ -65,14 +83,58 @@ function drawCaption(ctx: CanvasRenderingContext2D, frame: Frame, caption: strin
 function drawEmptyCell(ctx: CanvasRenderingContext2D, frame: Frame, index: number) {
   const rect = photoRect(index)
   ctx.save()
-  ctx.globalAlpha = 0.12
+  ctx.globalAlpha = 0.14
   ctx.fillStyle = frame.ink
   ctx.fillRect(rect.x, rect.y, rect.width, rect.height)
   ctx.restore()
 }
 
-export async function renderStripBase(ctx: CanvasRenderingContext2D, options: StripOptions) {
-  const { shots, frame, filter } = options
+async function drawSticker(ctx: CanvasRenderingContext2D, sticker: PlacedSticker, options: StripOptions) {
+  const size = sticker.size * STRIP.width
+  const centerX = sticker.x * STRIP.width
+  const centerY = sticker.y * STRIP.height
+
+  ctx.save()
+  // a photogram does not sit on the print, it is part of it: lighten lets the
+  // shape bleach the exposure underneath instead of painting over it
+  ctx.globalCompositeOperation = 'lighten'
+  ctx.translate(centerX, centerY)
+  ctx.rotate(sticker.rotation)
+
+  if (sticker.text) {
+    ctx.font = `${options.captionFace === 'script' ? 700 : 400} ${size}px ${captionFamily(options.captionFace)}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = options.frame.ink
+    ctx.fillText(sticker.text, 0, 0)
+    ctx.restore()
+    return
+  }
+
+  if (!sticker.src) {
+    ctx.restore()
+    return
+  }
+
+  try {
+    const art = await loadImage(sticker.src)
+    const aspect = art.naturalWidth && art.naturalHeight ? art.naturalHeight / art.naturalWidth : 1
+    ctx.drawImage(art, -size / 2, (-size * aspect) / 2, size, size * aspect)
+  } catch {
+    // skip a sticker whose file disappeared rather than failing the export
+  }
+  ctx.restore()
+}
+
+// the preview leaves the silhouettes, the frame art and the grain to the dom so
+// a sticker can still be dragged, and layers them in this same order on top
+export async function renderStripBase(
+  ctx: CanvasRenderingContext2D,
+  options: StripOptions,
+  forPreview = false,
+) {
+  const { shots, frame } = options
+  const filter = withExposure(options.filter, options.exposure)
   const nativeFilter = supportsCanvasFilter()
 
   ctx.save()
@@ -94,6 +156,14 @@ export async function renderStripBase(ctx: CanvasRenderingContext2D, options: St
     developPhoto(ctx, rect, filter, nativeFilter)
   }
 
+  drawCaption(ctx, options)
+  laySpeckle(ctx, STRIP.width, STRIP.height, { paper: options.paper })
+  if (forPreview) return
+
+  for (const sticker of options.stickers) {
+    await drawSticker(ctx, sticker, options)
+  }
+
   if (frame.src) {
     try {
       const art = await loadImage(frame.src)
@@ -111,48 +181,9 @@ export async function renderStripBase(ctx: CanvasRenderingContext2D, options: St
     }
   }
 
-  drawCaption(ctx, frame, options.caption, options.subcaption)
-}
-
-export const WORD_STICKER_FONT = `"${CAPTION_FONT}", "Brush Script MT", cursive`
-// the halo that keeps a cream word readable over a bright photo, as a share of
-// the font size
-export const WORD_HALO = 0.1
-
-async function drawSticker(ctx: CanvasRenderingContext2D, sticker: PlacedSticker) {
-  const size = sticker.size * STRIP.width
-  const centerX = sticker.x * STRIP.width
-  const centerY = sticker.y * STRIP.height
-
-  if (sticker.text) {
-    ctx.save()
-    ctx.translate(centerX, centerY)
-    ctx.rotate(sticker.rotation)
-    ctx.font = `700 ${size}px ${WORD_STICKER_FONT}`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.lineJoin = 'round'
-    ctx.lineWidth = size * WORD_HALO * 2
-    ctx.strokeStyle = 'rgba(11, 23, 17, 0.45)'
-    ctx.strokeText(sticker.text, 0, 0)
-    ctx.fillStyle = '#f8f2e6'
-    ctx.fillText(sticker.text, 0, 0)
-    ctx.restore()
-    return
-  }
-  if (!sticker.src) return
-
-  try {
-    const art = await loadImage(sticker.src)
-    const aspect = art.naturalWidth && art.naturalHeight ? art.naturalHeight / art.naturalWidth : 1
-    ctx.save()
-    ctx.translate(centerX, centerY)
-    ctx.rotate(sticker.rotation)
-    ctx.drawImage(art, -size / 2, (-size * aspect) / 2, size, size * aspect)
-    ctx.restore()
-  } catch {
-    // skip a sticker whose file disappeared rather than failing the export
-  }
+  // the grain goes on last so it runs across photos, silhouettes and paper
+  // alike, which is what stops anything looking stuck on afterwards
+  layGrain(ctx, STRIP.width, STRIP.height, { paper: options.paper })
 }
 
 export async function renderStrip(options: StripOptions): Promise<HTMLCanvasElement> {
@@ -164,8 +195,5 @@ export async function renderStrip(options: StripOptions): Promise<HTMLCanvasElem
 
   await ensureFonts()
   await renderStripBase(ctx, options)
-  for (const sticker of options.stickers) {
-    await drawSticker(ctx, sticker)
-  }
   return canvas
 }

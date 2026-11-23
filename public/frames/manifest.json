@@ -1,20 +1,12 @@
 {
   "items": [
     {
-      "id": "garland",
-      "name": "garland",
+      "id": "pressed-border",
+      "name": "pressed border",
       "kind": "strip",
-      "src": "/frames/garland.svg",
-      "background": "#f6efe2",
-      "ink": "#1d3b2a"
-    },
-    {
-      "id": "lights",
-      "name": "fairy lights",
-      "kind": "strip",
-      "src": "/frames/lights.svg",
-      "background": "#12241b",
-      "ink": "#f6efe2"
+      "src": "/frames/pressed-border.svg",
+      "background": "#123a6e",
+      "ink": "#eaf3fc"
     }
   ]
 }

@@ -1,9 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 100 100">
-  <defs>
-    <g id="art" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M50 85 C18 64 12 43 25 32 C36 23 48 30 50 39 C52 30 64 23 75 32 C88 43 82 64 50 85 Z" />
-    </g>
-  </defs>
-  <use href="#art" stroke="#0b1711" stroke-opacity="0.4" stroke-width="9" />
-  <use href="#art" stroke="#f8f2e6" stroke-width="4" />
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 100 100">
+  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M50 88 C16 64 10 42 24 30 C36 20 48 28 50 38 C52 28 64 20 76 30 C90 42 84 64 50 88 Z" />
+  </g>
 </svg>

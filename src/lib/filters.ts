@@ -72,6 +72,25 @@ export const FILTERS: PhotoFilter[] = [
   },
 ]
 
+// exposure is how long the print sat in the sun: 0 is a pale under-exposed
+// sheet, 1 is a deep, contrasty one. it rides on top of whichever preset is
+// chosen so the two controls stay independent
+export function withExposure(filter: PhotoFilter, exposure: number): PhotoFilter {
+  const shift = exposure - 0.5
+  const params = { ...filter.params }
+  params.brightness = (params.brightness ?? 1) * (1 - shift * 0.42)
+  params.contrast = (params.contrast ?? 1) * (1 + shift * 0.5)
+  return {
+    ...filter,
+    params,
+    wash: filter.wash ? { ...filter.wash, alpha: clampUnit(filter.wash.alpha * (1 + shift * 0.9)) } : undefined,
+  }
+}
+
+function clampUnit(value: number): number {
+  return value < 0 ? 0 : value > 1 ? 1 : value
+}
+
 export function filterById(id: string): PhotoFilter {
   return FILTERS.find((filter) => filter.id === id) ?? FILTERS[0]
 }

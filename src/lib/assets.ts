@@ -13,14 +13,21 @@ export type Frame = {
 export type Sticker = {
   id: string
   name: string
+  // which tray the sticker belongs to: sigil, fine line, pressed or words
+  group: string
   src?: string
   text?: string
 }
 
+// the paper the print is made on. sunprint is the house stock: everything else
+// is there for a guest who wants the strip warmer or darker
+// every stock is dark, because a photogram only reads when the paper is darker
+// than the thing laid on it
 export const PAPER_FRAMES: Frame[] = [
-  { id: 'cream', name: 'cream paper', kind: 'paper', background: '#f6efe2', ink: '#1d3b2a' },
-  { id: 'forest', name: 'forest', kind: 'paper', background: '#13301f', ink: '#f6efe2' },
-  { id: 'cranberry', name: 'cranberry', kind: 'paper', background: '#7d1326', ink: '#ffe9d6' },
+  { id: 'sunprint', name: 'sunprint', kind: 'paper', background: '#123a6e', ink: '#eaf3fc' },
+  { id: 'midnight', name: 'midnight', kind: 'paper', background: '#0a1c38', ink: '#dbe9f8' },
+  { id: 'slate', name: 'slate', kind: 'paper', background: '#243a4a', ink: '#e6f0f6' },
+  { id: 'iron', name: 'iron gall', kind: 'paper', background: '#2b2545', ink: '#ebe7fa' },
 ]
 
 type Manifest<T> = { items?: T[] } | T[]
@@ -62,6 +69,7 @@ export async function loadStickers(): Promise<Sticker[]> {
     .map((sticker) => ({
       id: sticker.id as string,
       name: sticker.name ?? (sticker.id as string),
+      group: sticker.group ?? 'pressed',
       src: sticker.src,
       text: sticker.text,
     }))

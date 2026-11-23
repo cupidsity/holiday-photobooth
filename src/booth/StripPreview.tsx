@@ -1,5 +1,6 @@
 import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
-import { PlacedSticker, StripOptions, WORD_HALO, WORD_STICKER_FONT, ensureFonts, renderStripBase } from '../lib/render'
+import { PlacedSticker, StripOptions, captionFamily, ensureFonts, renderStripBase } from '../lib/render'
+import { GRAIN_TILE, grainDataUrl, grainOpacity } from '../lib/paper'
 import { STRIP } from '../lib/strip'
 
 type Props = {
@@ -26,7 +27,7 @@ type Drag = {
 }
 
 const MIN_SIZE = 0.05
-const MAX_SIZE = 0.8
+const MAX_SIZE = 0.9
 
 function clamp(value: number, low: number, high: number): number {
   return Math.min(high, Math.max(low, value))
@@ -49,7 +50,7 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
     ensureFonts().then(() => {
       if (stale) return
       ctx.clearRect(0, 0, STRIP.width, STRIP.height)
-      return renderStripBase(ctx, options)
+      return renderStripBase(ctx, options, true)
     })
     return () => {
       stale = true
@@ -133,6 +134,7 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
   }
 
   const previewHeight = surfaceWidth * (STRIP.height / STRIP.width)
+  const grainScale = surfaceWidth ? (GRAIN_TILE * surfaceWidth) / STRIP.width : GRAIN_TILE
 
   return (
     <div
@@ -152,15 +154,15 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
         return (
           <div
             key={sticker.key}
-            className={`placed-sticker${selected ? ' selected' : ''}${sticker.text ? ' word' : ''}`}
+            className={`pressed${selected ? ' selected' : ''}${sticker.text ? ' word' : ''}`}
             style={{
               left: `${sticker.x * 100}%`,
               top: `${sticker.y * 100}%`,
               width: sticker.text ? undefined : `${pixelSize}px`,
-              height: sticker.text ? undefined : `${pixelSize}px`,
               fontSize: sticker.text ? `${pixelSize}px` : undefined,
-              fontFamily: sticker.text ? WORD_STICKER_FONT : undefined,
-              WebkitTextStrokeWidth: sticker.text ? `${pixelSize * WORD_HALO}px` : undefined,
+              fontFamily: sticker.text ? captionFamily(options.captionFace) : undefined,
+              fontWeight: sticker.text && options.captionFace === 'script' ? 700 : 400,
+              color: sticker.text ? options.frame.ink : undefined,
               transform: `translate(-50%, -50%) rotate(${sticker.rotation}rad)`,
             }}
             onPointerDown={(event) => beginDrag(event, sticker.key, 'move')}
@@ -176,14 +178,14 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
                     onChange(options.stickers.filter((item) => item.key !== sticker.key))
                     onSelect(null)
                   }}
-                  aria-label="remove sticker"
+                  aria-label="lift this one off"
                 >
                   ×
                 </button>
                 <button
                   className="sticker-handle transform"
                   onPointerDown={(event) => beginDrag(event, sticker.key, 'transform')}
-                  aria-label="resize and rotate sticker"
+                  aria-label="resize and turn"
                 >
                   ⤡
                 </button>
@@ -192,6 +194,18 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
           </div>
         )
       })}
+
+      {options.frame.src && <img className="strip-frame-art" src={options.frame.src} alt="" draggable={false} />}
+
+      <div
+        className="strip-grain"
+        aria-hidden="true"
+        style={{
+          backgroundImage: `url(${grainDataUrl()})`,
+          backgroundSize: `${grainScale}px ${grainScale}px`,
+          opacity: grainOpacity(options.paper),
+        }}
+      />
     </div>
   )
 }

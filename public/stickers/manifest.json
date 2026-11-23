@@ -1,154 +1,304 @@
 {
   "items": [
     {
-      "id": "tree",
-      "name": "tree",
-      "src": "/stickers/tree.svg"
+      "id": "sigil-wings",
+      "name": "wings",
+      "group": "sigil",
+      "src": "/stickers/sigil-wings.svg"
     },
     {
-      "id": "star",
-      "name": "star",
-      "src": "/stickers/star.svg"
+      "id": "sigil-spine",
+      "name": "spine",
+      "group": "sigil",
+      "src": "/stickers/sigil-spine.svg"
     },
     {
-      "id": "snowflake",
-      "name": "snowflake",
-      "src": "/stickers/snowflake.svg"
+      "id": "sigil-crown",
+      "name": "crown",
+      "group": "sigil",
+      "src": "/stickers/sigil-crown.svg"
     },
     {
-      "id": "gift",
-      "name": "gift",
-      "src": "/stickers/gift.svg"
-    },
-    {
-      "id": "candy-cane",
-      "name": "candy cane",
-      "src": "/stickers/candy-cane.svg"
-    },
-    {
-      "id": "bauble",
-      "name": "bauble",
-      "src": "/stickers/bauble.svg"
-    },
-    {
-      "id": "holly",
-      "name": "holly",
-      "src": "/stickers/holly.svg"
-    },
-    {
-      "id": "mug",
-      "name": "mug",
-      "src": "/stickers/mug.svg"
-    },
-    {
-      "id": "bell",
-      "name": "bell",
-      "src": "/stickers/bell.svg"
-    },
-    {
-      "id": "bow",
-      "name": "bow",
-      "src": "/stickers/bow.svg"
-    },
-    {
-      "id": "snowman",
-      "name": "snowman",
-      "src": "/stickers/snowman.svg"
-    },
-    {
-      "id": "sparkles",
-      "name": "sparkles",
-      "src": "/stickers/sparkles.svg"
-    },
-    {
-      "id": "heart",
+      "id": "sigil-heart",
       "name": "heart",
-      "src": "/stickers/heart.svg"
+      "group": "sigil",
+      "src": "/stickers/sigil-heart.svg"
+    },
+    {
+      "id": "sigil-star",
+      "name": "star",
+      "group": "sigil",
+      "src": "/stickers/sigil-star.svg"
+    },
+    {
+      "id": "sigil-drip",
+      "name": "drip",
+      "group": "sigil",
+      "src": "/stickers/sigil-drip.svg"
+    },
+    {
+      "id": "sigil-cluster",
+      "name": "cluster",
+      "group": "sigil",
+      "src": "/stickers/sigil-cluster.svg"
+    },
+    {
+      "id": "sigil-band",
+      "name": "band",
+      "group": "sigil",
+      "src": "/stickers/sigil-band.svg"
+    },
+    {
+      "id": "vine-trail",
+      "name": "vine trail",
+      "group": "fine line",
+      "src": "/stickers/vine-trail.svg"
+    },
+    {
+      "id": "lily",
+      "name": "lily",
+      "group": "fine line",
+      "src": "/stickers/lily.svg"
+    },
+    {
+      "id": "thorn-trail",
+      "name": "thorn trail",
+      "group": "fine line",
+      "src": "/stickers/thorn-trail.svg"
+    },
+    {
+      "id": "tendril",
+      "name": "tendril",
+      "group": "fine line",
+      "src": "/stickers/tendril.svg"
+    },
+    {
+      "id": "rose-line",
+      "name": "rose line",
+      "group": "fine line",
+      "src": "/stickers/rose-line.svg"
+    },
+    {
+      "id": "star-spark",
+      "name": "star spark",
+      "group": "fine line",
+      "src": "/stickers/star-spark.svg"
+    },
+    {
+      "id": "butterfly-line",
+      "name": "butterfly line",
+      "group": "fine line",
+      "src": "/stickers/butterfly-line.svg"
+    },
+    {
+      "id": "baby-breath",
+      "name": "baby breath",
+      "group": "fine line",
+      "src": "/stickers/baby-breath.svg"
     },
     {
       "id": "daisy",
       "name": "daisy",
+      "group": "pressed",
       "src": "/stickers/daisy.svg"
     },
     {
-      "id": "rose",
-      "name": "rose",
-      "src": "/stickers/rose.svg"
+      "id": "cosmos-flower",
+      "name": "cosmos flower",
+      "group": "pressed",
+      "src": "/stickers/cosmos-flower.svg"
+    },
+    {
+      "id": "queen-annes-lace",
+      "name": "queen annes lace",
+      "group": "pressed",
+      "src": "/stickers/queen-annes-lace.svg"
+    },
+    {
+      "id": "lavender",
+      "name": "lavender",
+      "group": "pressed",
+      "src": "/stickers/lavender.svg"
+    },
+    {
+      "id": "fern",
+      "name": "fern",
+      "group": "pressed",
+      "src": "/stickers/fern.svg"
+    },
+    {
+      "id": "berry-sprig",
+      "name": "berry sprig",
+      "group": "pressed",
+      "src": "/stickers/berry-sprig.svg"
+    },
+    {
+      "id": "clover",
+      "name": "clover",
+      "group": "pressed",
+      "src": "/stickers/clover.svg"
     },
     {
       "id": "tulip",
       "name": "tulip",
+      "group": "pressed",
       "src": "/stickers/tulip.svg"
     },
     {
-      "id": "sprig",
-      "name": "sprig",
-      "src": "/stickers/sprig.svg"
+      "id": "rose",
+      "name": "rose",
+      "group": "pressed",
+      "src": "/stickers/rose.svg"
+    },
+    {
+      "id": "wild-stem",
+      "name": "wild stem",
+      "group": "pressed",
+      "src": "/stickers/wild-stem.svg"
+    },
+    {
+      "id": "heart",
+      "name": "heart",
+      "group": "pressed",
+      "src": "/stickers/heart.svg"
+    },
+    {
+      "id": "heart-outline",
+      "name": "heart outline",
+      "group": "pressed",
+      "src": "/stickers/heart-outline.svg"
+    },
+    {
+      "id": "bow",
+      "name": "bow",
+      "group": "pressed",
+      "src": "/stickers/bow.svg"
+    },
+    {
+      "id": "ribbon",
+      "name": "ribbon",
+      "group": "pressed",
+      "src": "/stickers/ribbon.svg"
     },
     {
       "id": "butterfly",
       "name": "butterfly",
+      "group": "pressed",
       "src": "/stickers/butterfly.svg"
+    },
+    {
+      "id": "star",
+      "name": "star",
+      "group": "pressed",
+      "src": "/stickers/star.svg"
+    },
+    {
+      "id": "sparkle",
+      "name": "sparkle",
+      "group": "pressed",
+      "src": "/stickers/sparkle.svg"
+    },
+    {
+      "id": "swirl",
+      "name": "swirl",
+      "group": "pressed",
+      "src": "/stickers/swirl.svg"
     },
     {
       "id": "moon",
       "name": "moon",
+      "group": "pressed",
       "src": "/stickers/moon.svg"
     },
     {
-      "id": "wreath",
-      "name": "wreath",
-      "src": "/stickers/wreath.svg"
+      "id": "snowflake",
+      "name": "snowflake",
+      "group": "pressed",
+      "src": "/stickers/snowflake.svg"
+    },
+    {
+      "id": "holly",
+      "name": "holly",
+      "group": "pressed",
+      "src": "/stickers/holly.svg"
+    },
+    {
+      "id": "candy-cane",
+      "name": "candy cane",
+      "group": "pressed",
+      "src": "/stickers/candy-cane.svg"
+    },
+    {
+      "id": "bell",
+      "name": "bell",
+      "group": "pressed",
+      "src": "/stickers/bell.svg"
+    },
+    {
+      "id": "bunny",
+      "name": "bunny",
+      "group": "pressed",
+      "src": "/stickers/bunny.svg"
     },
     {
       "id": "word-merry",
       "name": "merry",
+      "group": "words",
       "text": "merry"
     },
     {
       "id": "word-xoxo",
       "name": "xoxo",
+      "group": "words",
       "text": "xoxo"
-    },
-    {
-      "id": "word-ho-ho-ho",
-      "name": "ho ho ho",
-      "text": "ho ho ho"
     },
     {
       "id": "word-so-cozy",
       "name": "so cozy",
+      "group": "words",
       "text": "so cozy"
     },
     {
       "id": "word-let-it-snow",
       "name": "let it snow",
+      "group": "words",
       "text": "let it snow"
     },
     {
       "id": "word-cheers",
-      "name": "cheers!",
-      "text": "cheers!"
+      "name": "cheers",
+      "group": "words",
+      "text": "cheers"
     },
     {
       "id": "word-be-mine",
       "name": "be mine",
+      "group": "words",
       "text": "be mine"
-    },
-    {
-      "id": "word-brrr",
-      "name": "brrr",
-      "text": "brrr"
     },
     {
       "id": "word-darling",
       "name": "darling",
+      "group": "words",
       "text": "darling"
     },
     {
-      "id": "word-3",
-      "name": "<3",
-      "text": "<3"
+      "id": "word-midwinter",
+      "name": "midwinter",
+      "group": "words",
+      "text": "midwinter"
+    },
+    {
+      "id": "word-hello-winter",
+      "name": "hello winter",
+      "group": "words",
+      "text": "hello winter"
+    },
+    {
+      "id": "word-forever",
+      "name": "forever",
+      "group": "words",
+      "text": "forever"
     }
   ]
 }

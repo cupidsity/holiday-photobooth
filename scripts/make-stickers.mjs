@@ -1,198 +1,624 @@
 import { writeFileSync } from 'node:fs'
 
-const OUT = '/Users/cupidity/Documents/Projects/holiday-photobooth/public/stickers'
+const OUT = new URL('../public/stickers/', import.meta.url)
 
-// every sticker is the same two-pass drawing: a dark halo underneath so the
-// line art stays readable on a bright photo, then the cream line on top
-const wrap = (art) => `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 100 100">
-  <defs>
-    <g id="art" fill="none" stroke-linecap="round" stroke-linejoin="round">
+// stickers are photogram silhouettes: in a real cyanotype whatever lies on the
+// paper blocks the sun and prints pale, so every shape is one flat pale field
+const wrap = (art) => `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 100 100">
+  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
 ${art
   .trim()
   .split('\n')
-  .map((line) => '      ' + line.trim())
+  .map((line) => '    ' + line.trim())
   .join('\n')}
-    </g>
-  </defs>
-  <use href="#art" stroke="#0b1711" stroke-opacity="0.4" stroke-width="9" />
-  <use href="#art" stroke="#f8f2e6" stroke-width="4" />
+  </g>
 </svg>
 `
 
+// a stem with leaves, used by several of the botanicals
+const stem = (x, topY, bottomY, width = 3) =>
+  `<path d="M${x} ${bottomY} C${x - 2} ${(topY + bottomY) / 2} ${x + 2} ${(topY + bottomY) / 2} ${x} ${topY}" stroke-width="${width}" fill="none" />`
+
+const leaf = (cx, cy, rotate, length = 16, width = 7) =>
+  `<ellipse cx="${cx}" cy="${cy}" rx="${width}" ry="${length}" transform="rotate(${rotate} ${cx} ${cy})" />`
+
+const petal = (cx, cy, rotate, length = 15, width = 7) =>
+  `<ellipse cx="${cx}" cy="${cy - length}" rx="${width}" ry="${length}" transform="rotate(${rotate} ${cx} ${cy})" />`
+
+const ring = (cx, cy, radius, count, draw) =>
+  Array.from({ length: count }, (unused, index) => draw(cx, cy, radius, (index * 360) / count)).join('\n')
+
 const stickers = {
-  tree: `
-    <path d="M50 10 L34 35 H66 Z" />
-    <path d="M50 28 L26 57 H74 Z" />
-    <path d="M50 48 L17 82 H83 Z" />
-    <path d="M43 82 V92 H57 V82" />
-    <path d="M50 4 V13 M45 8 H55" />
-  `,
-  star: `
-    <path d="M50 9 L61 37 L91 39 L68 58 L75 88 L50 71 L25 88 L32 58 L9 39 L39 37 Z" />
-  `,
-  snowflake: `
-    <path d="M50 8 V92" />
-    <path d="M14 29 L86 71" />
-    <path d="M86 29 L14 71" />
-    <path d="M50 24 L40 15 M50 24 L60 15" />
-    <path d="M50 76 L40 85 M50 76 L60 85" />
-    <path d="M28 41 L16 42 M28 41 L27 29" />
-    <path d="M72 59 L84 58 M72 59 L73 71" />
-    <path d="M72 41 L73 29 M72 41 L84 42" />
-    <path d="M28 59 L27 71 M28 59 L16 58" />
-  `,
-  gift: `
-    <path d="M20 44 H80 V88 H20 Z" />
-    <path d="M14 30 H86 V44 H14 Z" />
-    <path d="M50 30 V88" />
-    <path d="M50 30 C42 16 26 17 29 26 C31 32 44 31 50 30 Z" />
-    <path d="M50 30 C58 16 74 17 71 26 C69 32 56 31 50 30 Z" />
-  `,
-  'candy-cane': `
-    <path d="M38 90 V42 A15 15 0 0 1 68 42 V54" />
-    <path d="M39 76 L53 70" />
-    <path d="M39 62 L53 56" />
-    <path d="M40 48 L54 43" />
-    <path d="M50 32 L59 24" />
-  `,
-  bauble: `
-    <circle cx="50" cy="58" r="29" />
-    <path d="M42 24 H58 V32 H42 Z" />
-    <path d="M44 24 A6 6 0 0 1 56 24" />
-    <path d="M32 50 A20 20 0 0 1 48 36" />
-    <path d="M23 64 H77" />
-  `,
-  holly: `
-    <path d="M48 58 C30 56 18 44 20 30 C34 28 46 38 48 58 Z" />
-    <path d="M52 58 C70 56 82 44 80 30 C66 28 54 38 52 58 Z" />
-    <path d="M20 30 L48 58 M80 30 L52 58" />
-    <circle cx="44" cy="70" r="7" />
-    <circle cx="58" cy="66" r="6" />
-    <circle cx="52" cy="80" r="6" />
-  `,
-  mug: `
-    <path d="M24 42 H68 V70 A12 12 0 0 1 56 82 H36 A12 12 0 0 1 24 70 Z" />
-    <path d="M68 50 A11 11 0 0 1 68 70" />
-    <path d="M24 52 H68" />
-    <path d="M38 32 C34 26 42 22 38 15" />
-    <path d="M54 32 C50 26 58 22 54 15" />
-  `,
-  bell: `
-    <path d="M28 72 C28 46 34 34 50 28 C66 34 72 46 72 72" />
-    <path d="M22 72 H78" />
-    <circle cx="50" cy="82" r="6" />
-    <path d="M50 28 V21" />
-    <circle cx="50" cy="16" r="5" />
-  `,
-  bow: `
-    <circle cx="50" cy="50" r="7" />
-    <path d="M44 46 C28 30 12 36 16 50 C12 64 28 70 44 54" />
-    <path d="M56 46 C72 30 88 36 84 50 C88 64 72 70 56 54" />
-    <path d="M46 56 L36 86 L50 78 L64 86 L54 56" />
-  `,
-  snowman: `
-    <circle cx="50" cy="32" r="15" />
-    <circle cx="50" cy="66" r="21" />
-    <path d="M32 18 H68" />
-    <path d="M38 18 V8 H62 V18" />
-    <circle cx="45" cy="30" r="1.6" />
-    <circle cx="55" cy="30" r="1.6" />
-    <path d="M46 38 Q50 41 54 38" />
-    <path d="M29 60 L10 50 M29 60 L14 62" />
-    <path d="M71 60 L90 50 M71 60 L86 62" />
-  `,
-  sparkles: `
-    <path d="M38 22 Q41 36 55 39 Q41 42 38 56 Q35 42 21 39 Q35 36 38 22 Z" />
-    <path d="M70 48 Q72 58 82 60 Q72 62 70 72 Q68 62 58 60 Q68 58 70 48 Z" />
-    <path d="M46 70 Q47 77 54 78 Q47 79 46 86 Q45 79 38 78 Q45 77 46 70 Z" />
-  `,
-  heart: `
-    <path d="M50 85 C18 64 12 43 25 32 C36 23 48 30 50 39 C52 30 64 23 75 32 C88 43 82 64 50 85 Z" />
-  `,
   daisy: `
-    <circle cx="50" cy="42" r="9" />
-    <path d="M50 33 C44 20 56 20 50 33 Z" />
-    <path d="M59 38 C72 30 73 42 59 38 Z" />
-    <path d="M57 50 C68 60 57 65 57 50 Z" />
-    <path d="M43 50 C43 65 32 60 43 50 Z" />
-    <path d="M41 38 C27 42 28 30 41 38 Z" />
-    <path d="M50 51 C52 66 50 78 46 90" />
-    <path d="M49 68 C40 66 34 60 33 52 C42 52 48 58 49 68 Z" />
+    ${ring(50, 46, 0, 8, (cx, cy, radius, angle) => petal(cx, cy, angle, 17, 7))}
+    <circle cx="50" cy="46" r="9" />
+    ${stem(50, 58, 94)}
+    ${leaf(40, 74, 35, 11, 5)}
+    ${leaf(60, 82, -35, 10, 4)}
   `,
-  rose: `
-    <circle cx="50" cy="38" r="20" />
-    <path d="M50 28 A10 10 0 1 1 42 44" />
-    <path d="M52 34 A5 5 0 1 1 47 39" />
-    <path d="M50 58 V88" />
-    <path d="M50 70 C40 70 33 64 32 55 C42 55 49 61 50 70 Z" />
-    <path d="M50 78 C60 78 67 72 68 63 C58 63 51 69 50 78 Z" />
+  'cosmos-flower': `
+    ${ring(50, 40, 0, 6, (cx, cy, radius, angle) => petal(cx, cy, angle + 15, 19, 11))}
+    <circle cx="50" cy="40" r="7" />
+    ${stem(50, 54, 96)}
+    ${leaf(41, 70, 50, 13, 3)}
+    ${leaf(59, 80, -50, 12, 3)}
+  `,
+  'queen-annes-lace': `
+    ${ring(50, 34, 0, 12, (cx, cy, radius, angle) => {
+      const rad = ((angle - 90) * Math.PI) / 180
+      const px = cx + Math.cos(rad) * 22
+      const py = cy + Math.sin(rad) * 18
+      return `<path d="M${cx} ${cy + 4} L${px.toFixed(1)} ${py.toFixed(1)}" stroke-width="1.6" fill="none" /><circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="4.2" />`
+    })}
+    <circle cx="50" cy="34" r="4" />
+    ${stem(50, 40, 96, 2.6)}
+  `,
+  lavender: `
+    ${Array.from({ length: 9 }, (unused, index) => {
+      const y = 16 + index * 5.4
+      const spread = 3 + index * 0.9
+      return `<ellipse cx="${(50 - spread).toFixed(1)}" cy="${y}" rx="3.6" ry="4.4" /><ellipse cx="${(50 + spread).toFixed(1)}" cy="${y + 2}" rx="3.6" ry="4.4" />`
+    }).join('\n')}
+    ${stem(50, 20, 96, 2.6)}
+  `,
+  fern: `
+    ${stem(50, 10, 96, 3)}
+    ${Array.from({ length: 9 }, (unused, index) => {
+      const y = 20 + index * 8
+      const length = 20 - index * 1.6
+      return `${leaf(50 - length / 2, y, 62, length / 1.6, 3.4)}${leaf(50 + length / 2, y + 4, -62, length / 1.6, 3.4)}`
+    }).join('\n')}
+  `,
+  'berry-sprig': `
+    ${stem(52, 14, 96, 2.8)}
+    <circle cx="40" cy="34" r="6" /><circle cx="62" cy="44" r="6.5" />
+    <circle cx="38" cy="56" r="5.5" /><circle cx="60" cy="68" r="6" />
+    <circle cx="44" cy="76" r="4.5" />
+    ${leaf(64, 28, -40, 11, 5)}
+    ${leaf(36, 46, 40, 10, 4.5)}
+  `,
+  clover: `
+    ${ring(50, 46, 0, 4, (cx, cy, radius, angle) => {
+      const rad = ((angle - 90) * Math.PI) / 180
+      const px = (cx + Math.cos(rad) * 15).toFixed(1)
+      const py = (cy + Math.sin(rad) * 15).toFixed(1)
+      return `<ellipse cx="${px}" cy="${py}" rx="11" ry="12" transform="rotate(${angle} ${px} ${py})" />`
+    })}
+    ${stem(50, 60, 94, 2.6)}
   `,
   tulip: `
-    <path d="M32 30 C32 52 38 62 50 66 C62 62 68 52 68 30 C62 38 56 34 50 26 C44 34 38 38 32 30 Z" />
-    <path d="M50 66 V90" />
-    <path d="M50 76 C38 76 30 68 29 56 C41 56 49 64 50 76 Z" />
+    <path d="M33 30 C33 54 39 66 50 70 C61 66 67 54 67 30 C60 40 55 36 50 25 C45 36 40 40 33 30 Z" />
+    ${stem(50, 68, 96, 3)}
+    ${leaf(38, 82, 28, 14, 5)}
+    ${leaf(62, 86, -28, 12, 4.5)}
   `,
-  sprig: `
-    <path d="M50 92 C50 60 54 36 66 14" />
-    <path d="M52 76 C40 74 34 66 34 56 C44 57 51 65 52 76 Z" />
-    <path d="M55 60 C66 56 70 47 68 38 C59 42 54 50 55 60 Z" />
-    <path d="M55 44 C44 42 39 34 39 25 C48 27 55 34 55 44 Z" />
+  rose: `
+    <path d="M50 14 C64 14 74 25 74 38 C74 52 63 62 50 62 C38 62 29 53 29 42 C29 32 37 25 46 25 C54 25 60 31 60 39 C60 45 55 50 49 50 C44 50 40 46 40 41" fill="none" stroke-width="9" />
+    ${stem(50, 62, 96, 3)}
+    ${leaf(36, 74, 38, 13, 6)}
+    ${leaf(64, 84, -38, 12, 5.5)}
+  `,
+  'wild-stem': `
+    ${stem(48, 8, 96, 2.4)}
+    ${Array.from({ length: 7 }, (unused, index) => {
+      const y = 18 + index * 10
+      const side = index % 2 === 0 ? -1 : 1
+      return `<ellipse cx="${(48 + side * 10).toFixed(1)}" cy="${y}" rx="4" ry="8" transform="rotate(${side * 40} ${(48 + side * 10).toFixed(1)} ${y})" />`
+    }).join('\n')}
+  `,
+  heart: `
+    <path d="M50 88 C16 64 10 42 24 30 C36 20 48 28 50 38 C52 28 64 20 76 30 C90 42 84 64 50 88 Z" />
+  `,
+  'heart-outline': `
+    <path d="M50 88 C16 64 10 42 24 30 C36 20 48 28 50 38 C52 28 64 20 76 30 C90 42 84 64 50 88 Z" fill="none" stroke-width="6" />
+  `,
+  bow: `
+    <path d="M44 44 C26 26 8 32 12 50 C8 68 26 74 44 56 Z" />
+    <path d="M56 44 C74 26 92 32 88 50 C92 68 74 74 56 56 Z" />
+    <circle cx="50" cy="50" r="9" />
+    <path d="M44 58 L34 88 L50 78 L66 88 L56 58 Z" />
+  `,
+  ribbon: `
+    <path d="M50 8 C40 24 40 40 50 52 C60 40 60 24 50 8 Z" />
+    <path d="M46 50 C30 60 18 78 16 94 C34 88 46 72 50 56 Z" />
+    <path d="M54 50 C70 60 82 78 84 94 C66 88 54 72 50 56 Z" />
   `,
   butterfly: `
-    <path d="M50 30 V74" />
+    <ellipse cx="50" cy="50" rx="3.4" ry="22" />
     <circle cx="50" cy="26" r="4" />
-    <path d="M47 24 C42 14 34 10 30 14" />
-    <path d="M53 24 C58 14 66 10 70 14" />
-    <path d="M48 36 C34 20 12 26 16 44 C19 57 38 56 48 46 Z" />
-    <path d="M52 36 C66 20 88 26 84 44 C81 57 62 56 52 46 Z" />
-    <path d="M48 52 C38 46 20 52 24 66 C28 78 44 72 48 62 Z" />
-    <path d="M52 52 C62 46 80 52 76 66 C72 78 56 72 52 62 Z" />
+    <path d="M48 24 C42 12 32 8 28 13" stroke-width="2.6" fill="none" />
+    <path d="M52 24 C58 12 68 8 72 13" stroke-width="2.6" fill="none" />
+    <path d="M47 38 C32 20 10 26 15 44 C19 58 38 56 47 46 Z" />
+    <path d="M53 38 C68 20 90 26 85 44 C81 58 62 56 53 46 Z" />
+    <path d="M47 54 C36 48 18 54 23 68 C28 80 44 72 47 62 Z" />
+    <path d="M53 54 C64 48 82 54 77 68 C72 80 56 72 53 62 Z" />
+  `,
+  star: `
+    <path d="M50 6 L61 36 L92 38 L68 58 L76 90 L50 72 L24 90 L32 58 L8 38 L39 36 Z" />
+  `,
+  sparkle: `
+    <path d="M38 14 Q42 34 60 38 Q42 42 38 62 Q34 42 16 38 Q34 34 38 14 Z" />
+    <path d="M72 50 Q75 63 86 66 Q75 69 72 82 Q69 69 58 66 Q69 63 72 50 Z" />
+    <path d="M46 72 Q48 81 56 83 Q48 85 46 94 Q44 85 36 83 Q44 81 46 72 Z" />
+  `,
+  swirl: `
+    <path d="M86 20 C56 8 18 24 18 52 C18 72 38 84 54 78 C68 73 72 56 62 48 C53 41 40 46 40 56" fill="none" stroke-width="6" />
   `,
   moon: `
-    <path d="M62 14 A38 38 0 1 0 62 86 A30 30 0 1 1 62 14 Z" />
-    <path d="M76 24 L79 32 L87 35 L79 38 L76 46 L73 38 L65 35 L73 32 Z" />
-    <path d="M84 56 L86 61 L91 63 L86 65 L84 70 L82 65 L77 63 L82 61 Z" />
+    <path fill-rule="evenodd" d="M48 50 m-40 0 a40 40 0 1 0 80 0 a40 40 0 1 0 -80 0 M66 46 m-34 0 a34 34 0 1 0 68 0 a34 34 0 1 0 -68 0" />
   `,
-  wreath: `
-    <circle cx="50" cy="52" r="30" />
-    <path d="M50 22 L50 12 M68 28 L75 21 M80 44 L89 40 M80 62 L89 66 M68 77 L75 84 M50 82 L50 92 M32 77 L25 84 M20 62 L11 66 M20 44 L11 40 M32 28 L25 21" />
-    <path d="M42 86 C34 92 30 84 38 82 M58 86 C66 92 70 84 62 82" />
-    <circle cx="50" cy="86" r="4" />
+  snowflake: `
+    ${ring(50, 50, 0, 6, (cx, cy, radius, angle) => {
+      const rad = ((angle - 90) * Math.PI) / 180
+      const px = (cx + Math.cos(rad) * 40).toFixed(1)
+      const py = (cy + Math.sin(rad) * 40).toFixed(1)
+      const mx = (cx + Math.cos(rad) * 24).toFixed(1)
+      const my = (cy + Math.sin(rad) * 24).toFixed(1)
+      return `<path d="M${cx} ${cy} L${px} ${py}" stroke-width="5" fill="none" /><g transform="rotate(${angle} ${mx} ${my})"><path d="M${mx} ${my} l-9 -9 M${mx} ${my} l9 -9" stroke-width="4" fill="none" /></g>`
+    })}
+    <circle cx="50" cy="50" r="7" />
   `,
+  holly: `
+    <path d="M48 56 C28 54 16 40 18 24 C34 22 46 34 48 56 Z" />
+    <path d="M52 56 C72 54 84 40 82 24 C66 22 54 34 52 56 Z" />
+    <circle cx="43" cy="70" r="8" /><circle cx="59" cy="66" r="7" /><circle cx="51" cy="82" r="7" />
+  `,
+  'candy-cane': `
+    <path d="M36 92 V42 A16 16 0 0 1 68 42 V56" fill="none" stroke-width="12" />
+  `,
+  bell: `
+    <path d="M26 74 C26 46 33 33 50 26 C67 33 74 46 74 74 Z" />
+    <rect x="20" y="74" width="60" height="7" rx="3.5" />
+    <circle cx="50" cy="88" r="6" />
+    <circle cx="50" cy="18" r="6" />
+  `,
+  bunny: `
+    <ellipse cx="38" cy="30" rx="8" ry="22" transform="rotate(-12 38 30)" />
+    <ellipse cx="60" cy="32" rx="8" ry="20" transform="rotate(14 60 32)" />
+    <circle cx="50" cy="66" r="24" />
+  `,
+}
+
+
+// the second family is fine-line flash: hairline florals and spiked
+// cybersigilism, drawn as strokes rather than fields so they read as ink
+const flashWrap = (art, width, height) => `<svg xmlns="http://www.w3.org/2000/svg" width="${width * 2.4}" height="${height * 2.4}" viewBox="0 0 ${width} ${height}">
+  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+${art
+  .trim()
+  .split('\n')
+  .map((line) => '    ' + line.trim())
+  .join('\n')}
+  </g>
+</svg>
+`
+
+const line = (d, width = 1.3) => `<path d="${d}" fill="none" stroke-width="${width}" />`
+const dot = (x, y, radius = 1.2) => `<circle cx="${x}" cy="${y}" r="${radius}" />`
+
+// a five petal blossom seen face on, the size of a fingernail
+const blossom = (cx, cy, radius, rotate = 0) =>
+  `<g transform="rotate(${rotate} ${cx} ${cy})">` +
+  Array.from({ length: 5 }, (unused, index) => {
+    const angle = (index * 72 * Math.PI) / 180
+    const px = cx + Math.cos(angle - Math.PI / 2) * radius
+    const py = cy + Math.sin(angle - Math.PI / 2) * radius
+    return `<ellipse cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" rx="${(radius * 0.52).toFixed(1)}" ry="${(radius * 0.78).toFixed(1)}" transform="rotate(${(index * 72).toFixed(0)} ${px.toFixed(1)} ${py.toFixed(1)})" fill="none" stroke-width="1.1" />`
+  }).join('') +
+  dot(cx, cy, radius * 0.22) +
+  '</g>'
+
+// a pointed leaf drawn as two arcs meeting at the tip, with its midrib
+const leafLine = (x, y, angle, length, spread) => {
+  const rad = (angle * Math.PI) / 180
+  const tipX = x + Math.cos(rad) * length
+  const tipY = y + Math.sin(rad) * length
+  const offX = Math.cos(rad + Math.PI / 2) * spread
+  const offY = Math.sin(rad + Math.PI / 2) * spread
+  return (
+    line(
+      `M${x.toFixed(1)} ${y.toFixed(1)} Q${(x + Math.cos(rad) * length * 0.5 + offX).toFixed(1)} ${(y + Math.sin(rad) * length * 0.5 + offY).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)} Q${(x + Math.cos(rad) * length * 0.5 - offX).toFixed(1)} ${(y + Math.sin(rad) * length * 0.5 - offY).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)}`,
+      1.1,
+    ) + line(`M${x.toFixed(1)} ${y.toFixed(1)} L${tipX.toFixed(1)} ${tipY.toFixed(1)}`, 0.7)
+  )
+}
+
+const spike = (x, y, angle, length, width) => {
+  const rad = (angle * Math.PI) / 180
+  const tipX = x + Math.cos(rad) * length
+  const tipY = y + Math.sin(rad) * length
+  const baseX = Math.cos(rad + Math.PI / 2) * width
+  const baseY = Math.sin(rad + Math.PI / 2) * width
+  return `<path d="M${(x + baseX).toFixed(1)} ${(y + baseY).toFixed(1)} Q${(x + Math.cos(rad) * length * 0.55).toFixed(1)} ${(y + Math.sin(rad) * length * 0.55).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)} Q${(x - baseX + Math.cos(rad) * length * 0.2).toFixed(1)} ${(y - baseY + Math.sin(rad) * length * 0.2).toFixed(1)} ${(x - baseX).toFixed(1)} ${(y - baseY).toFixed(1)} Z" stroke-width="0.8" />`
+}
+
+const fourStar = (cx, cy, radius, thin = 0.3) =>
+  `<path d="M${cx} ${cy - radius} Q${cx + radius * thin} ${cy - radius * thin} ${cx + radius} ${cy} Q${cx + radius * thin} ${cy + radius * thin} ${cx} ${cy + radius} Q${cx - radius * thin} ${cy + radius * thin} ${cx - radius} ${cy} Q${cx - radius * thin} ${cy - radius * thin} ${cx} ${cy - radius} Z" />`
+
+
+// cybersigilism is built from tapered blades: wide at the root, curving as it
+// goes, ending in a needle point. everything else in the family is these
+// stacked, mirrored and fanned
+const blade = (x, y, angle, length, width, curve = 0.3) => {
+  const rad = (angle * Math.PI) / 180
+  const dirX = Math.cos(rad)
+  const dirY = Math.sin(rad)
+  const perpX = Math.cos(rad + Math.PI / 2)
+  const perpY = Math.sin(rad + Math.PI / 2)
+  const bend = curve * length
+  const tipX = x + dirX * length + perpX * bend
+  const tipY = y + dirY * length + perpY * bend
+  const leftX = x + perpX * width
+  const leftY = y + perpY * width
+  const rightX = x - perpX * width
+  const rightY = y - perpY * width
+  const midX = x + dirX * length * 0.5 + perpX * bend * 0.4
+  const midY = y + dirY * length * 0.5 + perpY * bend * 0.4
+  const fix = (value) => value.toFixed(1)
+  return `<path d="M${fix(leftX)} ${fix(leftY)} Q${fix(midX + perpX * width * 0.7)} ${fix(midY + perpY * width * 0.7)} ${fix(tipX)} ${fix(tipY)} Q${fix(midX - perpX * width * 0.45)} ${fix(midY - perpY * width * 0.45)} ${fix(rightX)} ${fix(rightY)} Z" stroke-width="0" />`
+}
+
+// the same blade on both sides of a vertical axis
+const mirrored = (axis, draw) => draw(1) + `<g transform="translate(${axis * 2} 0) scale(-1 1)">${draw(1)}</g>`
+
+const fan = (x, y, from, to, count, length, width, curve) =>
+  Array.from({ length: count }, (unused, index) => {
+    const angle = from + ((to - from) * index) / Math.max(1, count - 1)
+    const taper = 1 - Math.abs(index - (count - 1) / 2) / count
+    return blade(x, y, angle, length * (0.55 + taper * 0.75), width * (0.6 + taper * 0.6), curve)
+  }).join('')
+
+const sigil = {
+  'sigil-wings': {
+    width: 170,
+    height: 104,
+    art: `
+      <path d="M85 18 L92 52 L85 92 L78 52 Z" stroke-width="0" />
+      ${mirrored(85, () => blade(84, 44, -168, 72, 7, -0.18) + blade(84, 50, -176, 56, 5, 0.16) + blade(84, 56, 172, 44, 4, 0.3) + blade(84, 38, -156, 40, 3.4, -0.3))}
+      ${fourStar(85, 8, 8)}
+      ${fourStar(30, 84, 6)}
+      ${fourStar(140, 84, 6)}
+      ${dot(85, 100, 2)}
+    `,
+  },
+  'sigil-spine': {
+    width: 96,
+    height: 196,
+    art: `
+      ${blade(48, 190, -90, 110, 9, 0.06)}
+      ${blade(48, 96, -90, 76, 6, -0.08)}
+      ${Array.from({ length: 5 }, (unused, index) => {
+        const y = 168 - index * 30
+        const length = 52 - index * 6
+        return blade(46, y, -148, length, 6 - index * 0.6, -0.26) + blade(50, y - 14, -32, length * 0.86, 5.4 - index * 0.6, 0.26)
+      }).join('\n')}
+      ${fourStar(48, 12, 9)}
+      ${dot(18, 150, 2)} ${dot(78, 118, 2)}
+    `,
+  },
+  'sigil-crown': {
+    width: 150,
+    height: 124,
+    art: `
+      ${blade(75, 116, -90, 104, 9, 0)}
+      ${mirrored(75, () => blade(74, 116, -116, 84, 7, -0.26) + blade(74, 114, -142, 62, 5.5, -0.34) + blade(74, 110, -164, 40, 4, -0.4))}
+      <path d="M75 94 L82 110 L75 124 L68 110 Z" stroke-width="0" />
+      ${fourStar(75, 6, 7)}
+      ${dot(28, 70, 2)} ${dot(122, 70, 2)}
+    `,
+  },
+  'sigil-heart': {
+    width: 128,
+    height: 122,
+    art: `
+      <path d="M64 114 C30 88 18 64 24 46 C29 31 46 26 56 36 C60 40 63 46 64 52 C65 46 68 40 72 36 C82 26 99 31 104 46 C110 64 98 88 64 114 Z" stroke-width="0" />
+      ${mirrored(64, () => blade(40, 52, -150, 52, 7, -0.24) + blade(30, 74, 170, 34, 5, 0.26))}
+      ${fourStar(64, 12, 7)}
+      ${dot(14, 40, 2)} ${dot(114, 40, 2)}
+    `,
+  },
+  'sigil-star': {
+    width: 124,
+    height: 124,
+    art: `
+      ${[-90, 0, 90, 180].map((angle) => blade(62, 62, angle, 58, 7, 0)).join('\n')}
+      ${[-45, 45, 135, -135].map((angle) => blade(62, 62, angle, 30, 4, 0.12)).join('\n')}
+      <circle cx="62" cy="62" r="5" />
+      ${fourStar(104, 20, 6)}
+      ${fourStar(20, 104, 5)}
+    `,
+  },
+  'sigil-drip': {
+    width: 116,
+    height: 184,
+    art: `
+      ${blade(58, 16, 94, 158, 10, 0.1)}
+      ${blade(58, 24, 70, 122, 7, -0.26)}
+      ${blade(58, 30, 114, 104, 6, 0.32)}
+      ${blade(58, 20, 54, 70, 4.6, -0.36)}
+      ${blade(58, 34, 132, 60, 4.2, 0.4)}
+      <path d="M58 2 L66 22 L58 44 L50 22 Z" stroke-width="0" />
+      ${fourStar(96, 104, 6)}
+      ${dot(20, 126, 2)} ${dot(82, 166, 1.8)}
+    `,
+  },
+  'sigil-cluster': {
+    width: 136,
+    height: 132,
+    art: `
+      ${blade(38, 116, -58, 108, 9, 0.2)}
+      ${blade(38, 116, -40, 86, 6.5, 0.3)}
+      ${blade(38, 116, -76, 74, 6, 0.1)}
+      ${blade(38, 116, -22, 54, 4.5, 0.36)}
+      ${blade(38, 116, -98, 46, 4, -0.1)}
+      ${blade(38, 116, -140, 34, 3.4, -0.3)}
+      ${fourStar(114, 30, 8)}
+      ${fourStar(80, 76, 5)}
+      ${dot(18, 76, 1.8)} ${dot(98, 112, 1.6)}
+    `,
+  },
+  'sigil-band': {
+    width: 186,
+    height: 72,
+    art: `
+      ${mirrored(93, () => blade(92, 36, 178, 78, 6, -0.16) + blade(92, 36, 168, 46, 4, -0.3) + blade(92, 36, -172, 40, 3.4, 0.3))}
+      <path d="M93 10 L100 36 L93 62 L86 36 Z" stroke-width="0" />
+      ${fourStar(40, 16, 5)}
+      ${fourStar(146, 56, 5)}
+    `,
+  },
+}
+
+const flash = {
+  'vine-trail': {
+    width: 60,
+    height: 190,
+    art: `
+      ${line('M30 186 C14 160 44 144 28 118 C12 92 44 76 30 50 C22 34 26 18 32 4', 1.4)}
+      ${leafLine(27, 156, -30, 16, 4)}
+      ${leafLine(31, 142, 150, 15, 4)}
+      ${leafLine(26, 104, -25, 14, 3.6)}
+      ${leafLine(32, 92, 155, 13, 3.4)}
+      ${leafLine(28, 60, -35, 12, 3)}
+      ${blossom(20, 128, 8)}
+      ${blossom(40, 82, 9, 20)}
+      ${blossom(24, 36, 7, 40)}
+      ${line('M30 170 C42 166 46 156 38 152 C33 149 30 154 34 157', 0.9)}
+      ${line('M29 70 C17 66 13 56 21 52 C26 49 29 54 25 57', 0.9)}
+      ${dot(38, 118)} ${dot(18, 96, 1)} ${dot(40, 52, 1)} ${dot(22, 16, 1)}
+    `,
+  },
+  lily: {
+    width: 100,
+    height: 150,
+    art: `
+      ${Array.from({ length: 6 }, (unused, index) =>
+        `<g transform="rotate(${index * 60} 50 62)">${line('M50 62 C40 40 40 18 50 2 C60 18 60 40 50 62', 1.2)}${line('M50 62 L50 10', 0.6)}</g>`,
+      ).join('\n')}
+      ${Array.from({ length: 5 }, (unused, index) => {
+        const angle = -140 + index * 20
+        const rad = (angle * Math.PI) / 180
+        const tipX = 50 + Math.cos(rad) * 26
+        const tipY = 62 + Math.sin(rad) * 26
+        return line(`M50 62 Q${(50 + Math.cos(rad) * 14).toFixed(1)} ${(62 + Math.sin(rad) * 20).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)}`, 0.8) + dot(tipX, tipY, 1.8)
+      }).join('\n')}
+      ${line('M50 62 C52 92 46 116 50 148', 1.3)}
+      ${leafLine(50, 104, 160, 26, 6)}
+      ${leafLine(50, 124, 20, 22, 5)}
+    `,
+  },
+  'thorn-trail': {
+    width: 70,
+    height: 190,
+    art: `
+      ${line('M35 188 C20 158 50 140 34 112 C18 84 50 66 35 38 C28 24 32 14 36 2', 1.5)}
+      ${Array.from({ length: 7 }, (unused, index) => {
+        const y = 24 + index * 24
+        const side = index % 2 === 0 ? 1 : -1
+        const x = 35 + Math.sin(index * 1.2) * 6
+        return spike(x, y, side > 0 ? -34 : 214, 22 - index, 3.2)
+      }).join('\n')}
+      ${fourStar(52, 40, 7)}
+      ${fourStar(18, 100, 6)}
+      ${fourStar(50, 158, 5)}
+      ${dot(24, 64, 1.2)} ${dot(46, 124, 1.2)}
+    `,
+  },
+  tendril: {
+    width: 110,
+    height: 110,
+    art: `
+      ${line('M4 100 C34 100 58 86 70 64 C80 46 74 28 58 26 C44 24 36 38 46 46 C54 52 64 46 62 38', 1.3)}
+      ${line('M34 94 C40 84 38 74 30 72', 0.9)}
+      ${line('M66 76 C76 74 82 66 80 58', 0.9)}
+      ${blossom(92, 36, 10)}
+      ${leafLine(52, 90, -40, 18, 4.5)}
+      ${dot(22, 86, 1.2)} ${dot(86, 60, 1.2)}
+    `,
+  },
+  'rose-line': {
+    width: 100,
+    height: 150,
+    art: `
+      ${line('M50 36 C44 30 36 34 36 42 C36 52 46 58 56 54 C68 49 70 34 60 26 C48 16 30 22 26 38 C22 56 38 70 56 68', 1.1)}
+      ${line('M26 44 C18 56 22 72 36 78', 1)}
+      ${line('M74 40 C80 54 74 70 60 76', 1)}
+      ${line('M50 74 C52 100 48 124 50 148', 1.3)}
+      ${leafLine(50, 100, 165, 24, 6)}
+      ${leafLine(50, 120, 15, 20, 5)}
+      ${line('M50 92 L42 86', 0.8)}
+      ${line('M50 112 L58 106', 0.8)}
+    `,
+  },
+  'star-spark': {
+    width: 110,
+    height: 110,
+    art: `
+      ${fourStar(46, 44, 38, 0.17)}
+      ${fourStar(88, 78, 16, 0.2)}
+      ${fourStar(22, 88, 11, 0.2)}
+    `,
+  },
+  'butterfly-line': {
+    width: 120,
+    height: 100,
+    art: `
+      ${line('M60 32 C58 50 58 64 60 76', 1.2)}
+      ${dot(60, 28, 3)}
+      ${line('M58 26 C50 12 38 6 30 10', 0.8)}
+      ${line('M62 26 C70 12 82 6 90 10', 0.8)}
+      ${line('M57 38 C40 16 8 20 12 44 C15 62 44 60 57 48', 1.1)}
+      ${line('M63 38 C80 16 112 20 108 44 C105 62 76 60 63 48', 1.1)}
+      ${line('M57 54 C44 46 18 54 24 72 C30 86 50 76 57 64', 1.1)}
+      ${line('M63 54 C76 46 102 54 96 72 C90 86 70 76 63 64', 1.1)}
+      ${line('M50 36 C40 34 30 38 26 44', 0.7)}
+      ${line('M70 36 C80 34 90 38 94 44', 0.7)}
+      ${dot(32, 40, 1.4)} ${dot(88, 40, 1.4)}
+    `,
+  },
+  'baby-breath': {
+    width: 90,
+    height: 160,
+    art: `
+      ${line('M45 158 C42 126 46 100 44 72', 1.2)}
+      ${Array.from({ length: 9 }, (unused, index) => {
+        const angle = -120 + index * 15
+        const rad = (angle * Math.PI) / 180
+        const length = 34 - Math.abs(index - 4) * 3
+        const tipX = 44 + Math.cos(rad) * length
+        const tipY = 72 + Math.sin(rad) * length
+        return line(`M44 72 Q${(44 + Math.cos(rad) * length * 0.6).toFixed(1)} ${(72 + Math.sin(rad) * length * 0.75).toFixed(1)} ${tipX.toFixed(1)} ${tipY.toFixed(1)}`, 0.7) + dot(tipX, tipY, 2.6)
+      }).join('\n')}
+      ${leafLine(44, 118, 150, 18, 3)}
+      ${leafLine(45, 134, 30, 16, 3)}
+    `,
+  },
 }
 
 for (const [name, art] of Object.entries(stickers)) {
-  writeFileSync(`${OUT}/${name}.svg`, wrap(art))
+  writeFileSync(new URL(`${name}.svg`, OUT), wrap(art))
 }
 
-// word stickers are drawn as live text in the caption font rather than art
-// files, so they stay crisp at any size
-const words = [
-  'merry',
-  'xoxo',
-  'ho ho ho',
-  'so cozy',
-  'let it snow',
-  'cheers!',
-  'be mine',
-  'brrr',
-  'darling',
-  '<3',
-]
+for (const [name, piece] of Object.entries({ ...sigil, ...flash })) {
+  writeFileSync(new URL(`${name}.svg`, OUT), flashWrap(piece.art, piece.width, piece.height))
+}
+
+// word stickers are live text in the strip's own faces, so they stay crisp at
+// any size and follow the caption's script or serif setting
+const words = ['merry', 'xoxo', 'so cozy', 'let it snow', 'cheers', 'be mine', 'darling', 'midwinter', 'hello winter', 'forever']
 
 const manifest = {
   items: [
+    ...Object.keys(sigil).map((name) => ({
+      id: name,
+      name: name.replace(/^sigil-/, '').replace(/-/g, ' '),
+      group: 'sigil',
+      src: `/stickers/${name}.svg`,
+    })),
+    ...Object.keys(flash).map((name) => ({
+      id: name,
+      name: name.replace(/-/g, ' '),
+      group: 'fine line',
+      src: `/stickers/${name}.svg`,
+    })),
     ...Object.keys(stickers).map((name) => ({
       id: name,
       name: name.replace(/-/g, ' '),
+      group: 'pressed',
       src: `/stickers/${name}.svg`,
     })),
     ...words.map((word) => ({
-      id: `word-${word.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'heart'}`,
+      id: `word-${word.replace(/[^a-z0-9]+/gi, '-')}`,
       name: word,
+      group: 'words',
       text: word,
     })),
   ],
 }
-writeFileSync(`${OUT}/manifest.json`, JSON.stringify(manifest, null, 2) + '\n')
-console.log('wrote', Object.keys(stickers).length, 'stickers')
+writeFileSync(new URL('manifest.json', OUT), JSON.stringify(manifest, null, 2) + '\n')
+console.log(
+  'wrote',
+  Object.keys(stickers).length,
+  'silhouettes,',
+  Object.keys(sigil).length,
+  'sigils,',
+  Object.keys(flash).length,
+  'fine-line pieces and',
+  words.length,
+  'words',
+)
+
+
+// a botanical border for the strip, composed from the same silhouettes: this is
+// what a sunprint looks like when the flowers are laid around the photographs
+// rather than on them
+const FRAME_WIDTH = 600
+const FRAME_HEIGHT = 1800
+
+const placements = [
+  ['fern', 52, 120, 2.3, -14],
+  ['queen-annes-lace', 548, 150, 2.1, 16],
+  ['lavender', 38, 420, 1.9, 8],
+  ['vine-trail', 556, 470, 2.2, -6],
+  ['cosmos-flower', 60, 700, 1.7, 22],
+  ['baby-breath', 545, 760, 1.9, -12],
+  ['daisy', 44, 980, 1.6, -18],
+  ['berry-sprig', 556, 1010, 1.8, 10],
+  ['wild-stem', 54, 1250, 1.9, 14],
+  ['tendril', 548, 1290, 1.6, -20],
+  ['sprig-dummy', 0, 0, 0, 0],
+  ['clover', 86, 1545, 1.3, -24],
+  ['butterfly-line', 500, 1548, 1.4, 12],
+  ['star-spark', 300, 36, 0.9, 0],
+  ['sparkle', 120, 1700, 1.1, 0],
+  ['queen-annes-lace', 470, 1690, 1.5, -10],
+]
+
+const frameArt = placements
+  .filter(([name]) => stickers[name] || flash[name] || sigil[name])
+  .map(([name, x, y, scale, rotate]) => {
+    const piece = stickers[name] ?? flash[name] ?? sigil[name]
+    const body = typeof piece === 'string' ? piece : piece.art
+    const width = typeof piece === 'string' ? 100 : piece.width
+    const height = typeof piece === 'string' ? 100 : piece.height
+    const strokeWidth = typeof piece === 'string' ? 0 : 1.3
+    return `  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale}) translate(${-width / 2} ${-height / 2})" stroke-width="${strokeWidth}">
+${body
+      .trim()
+      .split('\n')
+      .map((entry) => '    ' + entry.trim())
+      .join('\n')}
+  </g>`
+  })
+  .join('\n')
+
+writeFileSync(
+  new URL('../frames/pressed-border.svg', OUT),
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${FRAME_WIDTH}" height="${FRAME_HEIGHT}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}">
+  <g fill="#eaf3fc" stroke="#eaf3fc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
+${frameArt}
+  </g>
+</svg>
+`,
+)
+
+writeFileSync(
+  new URL('../frames/manifest.json', OUT),
+  JSON.stringify(
+    {
+      items: [
+        {
+          id: 'pressed-border',
+          name: 'pressed border',
+          kind: 'strip',
+          src: '/frames/pressed-border.svg',
+          background: '#123a6e',
+          ink: '#eaf3fc',
+        },
+      ],
+    },
+    null,
+    2,
+  ) + '\n',
+)
+console.log('wrote the pressed border frame')
