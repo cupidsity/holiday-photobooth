@@ -20,9 +20,7 @@ const FOCAL = 900
 const REVEAL_MS = 3200
 const AUTO_SPIN = 0.32
 // how long the tree takes to come apart once it has been tapped
-const DISSOLVE_MS = 1500
-// what a character turns into on its way out
-const DISSOLVE_RAMP = ['@', '#', '*', '+', '=', '-', '~', '·', '.']
+const DISSOLVE_MS = 1400
 // the view tips up over the tree but never under it: from below the cone turns
 // inside out and the whole thing stops reading as a tree
 const PITCH_LOW = 0
@@ -157,7 +155,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       const dissolveFrom = dissolveFromRef.current
       const dissolve =
         dissolveFrom === null ? 0 : clamp((now - dissolveFrom) / DISSOLVE_MS, 0, 1)
-      const standing = 1 - dissolve
+      const standing = 1 - dissolve * dissolve
 
       // the tree holds still under a finger and picks its spin back up the
       // moment it is let go
@@ -264,22 +262,26 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
             continue
           }
 
-          // every character thins out through the ramp and drifts off on its
-          // own heading, so the tree comes apart rather than fading as a sheet
+          // a carriage runs down the page a row at a time, left to right, and
+          // every character it passes comes unstuck and falls off the bottom
           const seed = cellSeed(column, row)
-          const gone = clamp((dissolve - seed * 0.45) / 0.5, 0, 1)
-          if (gone >= 1) continue
-          ctx.globalAlpha = 1 - gone
+          const cue = (row / rows) * 0.6 + (column / columns) * 0.07
+          const loose = clamp((dissolve - cue) / 0.4, 0, 1)
+          if (loose >= 1) continue
+          ctx.globalAlpha = 1 - loose * loose
           ctx.fillStyle = packedToCss(colorBuffer[index])
           ctx.fillText(
-            DISSOLVE_RAMP[Math.min(DISSOLVE_RAMP.length - 1, Math.floor(gone * DISSOLVE_RAMP.length))],
-            column * cellWidth + (seed - 0.5) * gone * cellWidth * 7,
-            row * cellHeight - gone * cellHeight * 4,
+            glyphAt(code),
+            column * cellWidth + (seed - 0.5) * loose * cellWidth * 2.4,
+            // squared, so they pick up speed on the way down
+            row * cellHeight + loose * loose * height * 1.6,
           )
         }
       }
 
-      if (dissolve >= 1 && !leavingRef.current) {
+      // hand over before the last characters have finished falling, so the
+      // booth comes up through them rather than after a beat of empty sky
+      if (dissolve >= 0.72 && !leavingRef.current) {
         leavingRef.current = true
         enterRef.current()
       }
