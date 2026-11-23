@@ -48,12 +48,6 @@
   width: min(48vw, 180px);
 }
 
-.intro-caption {
-  margin: 0;
-  font-size: var(--fs-small);
-  color: var(--muted);
-}
-
 .intro-card {
   width: min(100%, 460px);
   background: var(--sheet);

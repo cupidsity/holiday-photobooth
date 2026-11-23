@@ -260,7 +260,6 @@ export function Booth() {
 
           <div className="intro-strip" aria-hidden="true">
             <StripPreview options={sampleStrip} selectedKey={null} onSelect={() => {}} onChange={() => {}} />
-            <p className="intro-caption">A blank strip, pressed and waiting.</p>
           </div>
         </div>
       </div>
