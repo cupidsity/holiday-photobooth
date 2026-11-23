@@ -1,6 +1,6 @@
 import { RefObject } from 'react'
 import { CameraState } from './useCamera'
-import { PHOTO_ASPECT } from '../lib/strip'
+import { PHOTO_ASPECT, STRIP } from '../lib/strip'
 
 type Props = {
   videoRef: RefObject<HTMLVideoElement>
@@ -69,7 +69,9 @@ export function CameraStage({
       {flashing && <div className="flash" />}
 
       <div className="stage-chips">
-        <span className="chip-static">{shotCount}/3</span>
+        <span className="chip-static">
+          {shotCount}/{STRIP.photoCount}
+        </span>
         {hasMultipleCameras && (
           <button className="chip-static tappable" onClick={onFlip}>
             flip

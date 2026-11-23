@@ -1,15 +1,28 @@
 export type Frame = {
   id: string
   name: string
-  // strip art covers the whole 600x1800 strip, photo art is stamped over each
-  // of the three photo cells, and paper means no art at all
+  // strip art covers the whole strip, photo art is stamped over each window,
+  // and paper means no art at all
   kind: 'strip' | 'photo' | 'paper'
   src?: string
   background: string
   ink: string
+  // where the art sits in its own file: drawn frames are exported centred in a
+  // wider canvas, so the strip crops to the art
+  art?: { left: number; width: number; height: number }
+  // the frame's own photo windows, in strip coordinates
+  windows?: Window[]
+  // the height the caption is centred on, or null for a frame whose art runs
+  // to the foot and leaves it nowhere to go
+  caption?: number | null
+  // how much room the frame leaves for it: a frame whose art runs to the foot
+  // gets a smaller caption so it sits in the band rather than on the drawing
+  captionScale?: number
 }
 
 // a sticker is either a piece of line art or a word set in the caption hand
+import { Window } from './strip'
+
 export type Sticker = {
   id: string
   name: string
@@ -56,6 +69,15 @@ export async function loadFrames(): Promise<Frame[]> {
       src: frame.src,
       background: frame.background ?? '#f6efe2',
       ink: frame.ink ?? '#1d3b2a',
+      art: frame.art,
+      // the manifest measures windows in the artwork's own file, so they are
+      // moved by however much the strip crops off its left edge
+      windows: frame.windows?.map((window) => ({
+        ...window,
+        x: window.x - (frame.art?.left ?? 0),
+      })),
+      caption: frame.caption,
+      captionScale: frame.captionScale,
     }))
   return [...normalised, ...PAPER_FRAMES]
 }

@@ -1,7 +1,7 @@
 import { Frame, loadImage } from './assets'
 import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter, withExposure } from './filters'
 import { layGrain, layHalation, laySpeckle, layVignette, stampCanvas } from './paper'
-import { FOOTER_HEIGHT, FOOTER_TOP, STRIP, drawCover, photoRect } from './strip'
+import { DEFAULT_CAPTION_Y, DEFAULT_WINDOWS, STRIP, Window, drawCover } from './strip'
 
 export type CaptionFace = 'script' | 'serif'
 
@@ -36,6 +36,22 @@ export type StripOptions = {
   stickers: PlacedSticker[]
 }
 
+// one place for the caption's measurements, so the preview's own caption layer
+// lands exactly where the exported one does
+export function captionLayout(face: CaptionFace, scale = 1) {
+  const base =
+    face === 'script'
+      ? { big: 92, small: 48, bigShift: -26, smallShift: 44, weight: 700 }
+      : { big: 64, small: 34, bigShift: -26, smallShift: 44, weight: 400 }
+  return {
+    ...base,
+    big: base.big * scale,
+    small: base.small * scale,
+    bigShift: base.bigShift * scale,
+    smallShift: base.smallShift * scale,
+  }
+}
+
 export const SCRIPT_FONT = '"Caveat", "Brush Script MT", cursive'
 export const SERIF_FONT = '"Instrument Serif", "Iowan Old Style", Georgia, serif'
 
@@ -55,13 +71,19 @@ export async function ensureFonts() {
   }
 }
 
+// a frame brings its own windows and caption line; the paper stocks fall back
+// to the shape the drawn frames share
+function windowsOf(frame: Frame): Window[] {
+  return frame.windows ?? DEFAULT_WINDOWS
+}
+
 function drawCaption(ctx: CanvasRenderingContext2D, options: StripOptions) {
   const { frame, caption, subcaption, captionFace } = options
+  if (frame.caption === null) return
   const family = captionFamily(captionFace)
   const centerX = STRIP.width / 2
-  const baseY = FOOTER_TOP + FOOTER_HEIGHT / 2
-  const bigSize = captionFace === 'script' ? 88 : 62
-  const smallSize = captionFace === 'script' ? 46 : 32
+  const baseY = frame.caption ?? DEFAULT_CAPTION_Y
+  const metrics = captionLayout(captionFace, frame.captionScale ?? 1)
 
   ctx.save()
   ctx.fillStyle = frame.ink
@@ -69,19 +91,20 @@ function drawCaption(ctx: CanvasRenderingContext2D, options: StripOptions) {
   ctx.textBaseline = 'middle'
 
   if (caption.trim()) {
-    ctx.font = `${captionFace === 'script' ? 700 : 400} ${bigSize}px ${family}`
-    ctx.fillText(caption, centerX, baseY - 22, STRIP.width - STRIP.sidePadding * 2)
+    ctx.font = `${metrics.weight} ${metrics.big}px ${family}`
+    ctx.fillText(caption, centerX, baseY + metrics.bigShift, STRIP.width - 120)
   }
   if (subcaption.trim()) {
     ctx.globalAlpha = 0.72
-    ctx.font = `400 ${smallSize}px ${family}`
-    ctx.fillText(subcaption, centerX, baseY + 46, STRIP.width - STRIP.sidePadding * 2)
+    ctx.font = `400 ${metrics.small}px ${family}`
+    ctx.fillText(subcaption, centerX, baseY + metrics.smallShift, STRIP.width - 120)
   }
   ctx.restore()
 }
 
 function drawEmptyCell(ctx: CanvasRenderingContext2D, frame: Frame, index: number) {
-  const rect = photoRect(index)
+  const rect = windowsOf(frame)[index]
+  if (!rect) return
   ctx.save()
   ctx.globalAlpha = 0.14
   ctx.fillStyle = frame.ink
@@ -168,7 +191,8 @@ export async function renderStripBase(
       drawEmptyCell(ctx, frame, index)
       continue
     }
-    const rect = photoRect(index)
+    const rect = windowsOf(frame)[index]
+    if (!rect) continue
     ctx.save()
     if (nativeFilter) ctx.filter = cssFilter(filter)
     drawCover(ctx, shot, shot.width, shot.height, rect.x, rect.y, rect.width, rect.height)
@@ -178,7 +202,6 @@ export async function renderStripBase(
     layVignette(ctx, rect, options.paper)
   }
 
-  drawCaption(ctx, options)
   laySpeckle(ctx, STRIP.width, STRIP.height, { paper: options.paper })
   if (forPreview) return
 
@@ -192,9 +215,13 @@ export async function renderStripBase(
       if (frame.kind === 'photo') {
         for (let index = 0; index < STRIP.photoCount; index += 1) {
           if (!shots[index]) continue
-          const rect = photoRect(index)
-          ctx.drawImage(art, rect.x, rect.y, rect.width, rect.height)
+          const rect = windowsOf(frame)[index]
+          if (rect) ctx.drawImage(art, rect.x, rect.y, rect.width, rect.height)
         }
+      } else if (frame.art) {
+        // the drawn frames are exported centred in a wider canvas, so the art
+        // goes down shifted to put its own left edge on the strip's
+        ctx.drawImage(art, -frame.art.left, 0, frame.art.width, frame.art.height)
       } else {
         ctx.drawImage(art, 0, 0, STRIP.width, STRIP.height)
       }
@@ -202,6 +229,10 @@ export async function renderStripBase(
       // a frame whose art went missing still prints as plain paper
     }
   }
+
+  // the caption sits on the frame's own caption band, so it goes down after
+  // the art rather than under it
+  drawCaption(ctx, options)
 
   // the grain goes on last so it runs across photos, silhouettes and paper
   // alike, which is what stops anything looking stuck on afterwards

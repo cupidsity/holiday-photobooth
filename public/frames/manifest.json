@@ -1,6 +1,128 @@
 {
   "items": [
     {
+      "id": "candy-cane",
+      "name": "candy cane",
+      "kind": "strip",
+      "src": "/frames/candy-cane.png",
+      "background": "#fffcf0",
+      "ink": "#7d1222",
+      "art": {
+        "left": 160,
+        "width": 1000,
+        "height": 1800
+      },
+      "windows": [
+        {
+          "x": 240,
+          "y": 260,
+          "width": 520,
+          "height": 240
+        },
+        {
+          "x": 240,
+          "y": 530,
+          "width": 520,
+          "height": 320
+        },
+        {
+          "x": 240,
+          "y": 860,
+          "width": 520,
+          "height": 320
+        },
+        {
+          "x": 300,
+          "y": 1190,
+          "width": 400,
+          "height": 290
+        }
+      ],
+      "caption": 1620,
+      "captionScale": 1.0
+    },
+    {
+      "id": "snowfall",
+      "name": "snowfall",
+      "kind": "strip",
+      "src": "/frames/snowfall.png",
+      "background": "#faf3f6",
+      "ink": "#4a3566",
+      "art": {
+        "left": 160,
+        "width": 1000,
+        "height": 1800
+      },
+      "windows": [
+        {
+          "x": 240,
+          "y": 280,
+          "width": 520,
+          "height": 220
+        },
+        {
+          "x": 240,
+          "y": 530,
+          "width": 520,
+          "height": 320
+        },
+        {
+          "x": 240,
+          "y": 860,
+          "width": 520,
+          "height": 320
+        },
+        {
+          "x": 240,
+          "y": 1190,
+          "width": 520,
+          "height": 230
+        }
+      ],
+      "caption": 1452,
+      "captionScale": 0.5
+    },
+    {
+      "id": "gingerbread",
+      "name": "gingerbread",
+      "kind": "strip",
+      "src": "/frames/gingerbread.png",
+      "background": "#ffddb5",
+      "ink": "#6b3410",
+      "art": {
+        "left": 160,
+        "width": 1000,
+        "height": 1800
+      },
+      "windows": [
+        {
+          "x": 260,
+          "y": 190,
+          "width": 480,
+          "height": 310
+        },
+        {
+          "x": 260,
+          "y": 530,
+          "width": 480,
+          "height": 320
+        },
+        {
+          "x": 240,
+          "y": 860,
+          "width": 520,
+          "height": 320
+        },
+        {
+          "x": 250,
+          "y": 1190,
+          "width": 500,
+          "height": 270
+        }
+      ],
+      "caption": null
+    },
+    {
       "id": "pressed-border",
       "name": "pressed border",
       "kind": "strip",

@@ -1,7 +1,14 @@
 import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
-import { PlacedSticker, StripOptions, captionFamily, ensureFonts, renderStripBase } from '../lib/render'
+import {
+  PlacedSticker,
+  StripOptions,
+  captionFamily,
+  captionLayout,
+  ensureFonts,
+  renderStripBase,
+} from '../lib/render'
 import { GRAIN_TILE, STAMP_TILE, grainDataUrl, grainOpacity, stampDataUrl } from '../lib/paper'
-import { STRIP } from '../lib/strip'
+import { DEFAULT_CAPTION_Y, STRIP } from '../lib/strip'
 import { LiftIcon, ResizeIcon } from './icons'
 
 type Props = {
@@ -212,7 +219,53 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
         )
       })}
 
-      {options.frame.src && <img className="strip-frame-art" src={options.frame.src} alt="" draggable={false} />}
+      {options.frame.src && (
+        <img
+          className="strip-frame-art"
+          src={options.frame.src}
+          alt=""
+          draggable={false}
+          // a drawn frame is exported centred in a wider canvas, so it is laid
+          // over the strip at its own proportions rather than stretched to fit
+          style={
+            options.frame.art
+              ? {
+                  width: `${(options.frame.art.width / STRIP.width) * 100}%`,
+                  left: `${(-options.frame.art.left / STRIP.width) * 100}%`,
+                }
+              : undefined
+          }
+        />
+      )}
+
+      {/* the caption rides on top of the frame art, the way the export has it.
+          each line is placed on the same centre line the canvas uses */}
+      {options.frame.caption !== null &&
+        (['big', 'small'] as const).map((line) => {
+          const metrics = captionLayout(options.captionFace, options.frame.captionScale ?? 1)
+          const words = line === 'big' ? options.caption : options.subcaption
+          if (!words.trim()) return null
+          const centre =
+            (options.frame.caption ?? DEFAULT_CAPTION_Y) +
+            (line === 'big' ? metrics.bigShift : metrics.smallShift)
+          return (
+            <div
+              key={line}
+              className="strip-caption"
+              aria-hidden="true"
+              style={{
+                top: `${(centre / STRIP.height) * 100}%`,
+                color: options.frame.ink,
+                fontFamily: captionFamily(options.captionFace),
+                fontWeight: line === 'big' ? metrics.weight : 400,
+                fontSize: `${((line === 'big' ? metrics.big : metrics.small) / STRIP.width) * surfaceWidth}px`,
+                opacity: line === 'big' ? 1 : 0.74,
+              }}
+            >
+              {words}
+            </div>
+          )
+        })}
 
       <div
         className="strip-grain"

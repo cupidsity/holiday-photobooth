@@ -365,6 +365,22 @@
   pointer-events: none;
 }
 
+/* a frame that brings its own art box sets its own width and offset */
+.strip-frame-art {
+  right: auto;
+}
+
+.strip-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  line-height: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .strip-grain {
   mix-blend-mode: overlay;
 }

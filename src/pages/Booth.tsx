@@ -8,7 +8,7 @@ import { Frame, PAPER_FRAMES, Sticker, loadFrames, loadStickers } from '../lib/a
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR } from '../lib/config'
 import { cssFilter, filterById, withExposure } from '../lib/filters'
 import { CaptionFace, PlacedSticker, StripOptions, renderStrip } from '../lib/render'
-import { PHOTO_HEIGHT, PHOTO_WIDTH, drawCover } from '../lib/strip'
+import { CAPTURE_HEIGHT, CAPTURE_WIDTH, STRIP, drawCover } from '../lib/strip'
 import { canShareStrip, saveStrip, shareStrip } from '../lib/download'
 import '../styles/booth.css'
 
@@ -17,6 +17,7 @@ type Tab = 'look' | 'press' | 'words' | 'paper'
 
 const COUNTDOWN_FROM = 3
 const BETWEEN_SHOTS_MS = 900
+const EVERY_SHOT = Array.from({ length: STRIP.photoCount }, (_item, index) => index)
 const DEVELOP_MS = 5200
 
 function sleep(ms: number): Promise<void> {
@@ -34,11 +35,11 @@ export function Booth() {
 
   const [phase, setPhase] = useState<Phase>('intro')
   const [tab, setTab] = useState<Tab>('look')
-  const [shots, setShots] = useState<(HTMLCanvasElement | null)[]>([null, null, null])
-  const [thumbnails, setThumbnails] = useState<(string | null)[]>([null, null, null])
+  const [shots, setShots] = useState<(HTMLCanvasElement | null)[]>(() => EVERY_SHOT.map(() => null))
+  const [thumbnails, setThumbnails] = useState<(string | null)[]>(() => EVERY_SHOT.map(() => null))
   const [frames, setFrames] = useState<Frame[]>(PAPER_FRAMES)
   const [stickerKinds, setStickerKinds] = useState<Sticker[]>([])
-  const [frameId, setFrameId] = useState('forest')
+  const [frameId, setFrameId] = useState('candy-cane')
   const [filterId, setFilterId] = useState('noel')
   const [exposure, setExposure] = useState(0.52)
   const [paper, setPaper] = useState(0.42)
@@ -74,9 +75,9 @@ export function Booth() {
   // the blank strip on the first screen: real paper, real botanicals, no
   // pretend photographs in the three windows
   const sampleStrip: StripOptions = useMemo(() => {
-    const bordered = frames.find((item) => item.src) ?? frame
+    const bordered = frames.find((item) => item.windows) ?? frames.find((item) => item.src) ?? frame
     return {
-      shots: [null, null, null],
+      shots: EVERY_SHOT.map(() => null),
       frame: bordered,
       filter,
       exposure,
@@ -96,8 +97,8 @@ export function Booth() {
     const video = videoRef.current
     if (!video || !video.videoWidth) return null
     const canvas = document.createElement('canvas')
-    canvas.width = PHOTO_WIDTH
-    canvas.height = PHOTO_HEIGHT
+    canvas.width = CAPTURE_WIDTH
+    canvas.height = CAPTURE_HEIGHT
     const ctx = canvas.getContext('2d')
     if (!ctx) return null
     if (mirrored) {
@@ -181,8 +182,8 @@ export function Booth() {
 
   function startOver() {
     cancelSequence()
-    setShots([null, null, null])
-    setThumbnails([null, null, null])
+    setShots(EVERY_SHOT.map(() => null))
+    setThumbnails(EVERY_SHOT.map(() => null))
     setPlaced([])
     setSelectedSticker(null)
     setPhase('intro')
@@ -247,9 +248,9 @@ export function Booth() {
 
         <div className="intro-layout">
           <div className="intro-card">
-            <h1 className="intro-title">Three photographs, one strip.</h1>
+            <h1 className="intro-title">Four photographs, one strip.</h1>
             <p className="intro-copy">
-              The booth counts you in three times, then the strip drops out of the slot and develops.
+              The booth counts you in four times, then the strip drops out of the slot and develops.
               Press flowers and sigils into it, set the look, keep it.
             </p>
             <button className="button" onClick={openBooth}>
@@ -272,7 +273,7 @@ export function Booth() {
       <div className="booth shoot">
         <header className="bar">
           <span className="mark">{BOOTH_NAME}</span>
-          <span className="bar-note">{filledShots.length} of 3 exposed</span>
+          <span className="bar-note">{filledShots.length} of {STRIP.photoCount} exposed</span>
         </header>
 
         <CameraStage
@@ -314,7 +315,7 @@ export function Booth() {
               disabled={camera.state.status !== 'live'}
               onClick={() => runSequence(shots.map((shot, index) => (shot ? -1 : index)).filter((index) => index >= 0))}
             >
-              {pending === 3 ? 'Take three' : `Take ${pending} more`}
+              {pending === STRIP.photoCount ? 'Take four' : `Take ${pending} more`}
             </button>
           )}
           {filledShots.length === 3 && !shooting && (
@@ -349,7 +350,7 @@ export function Booth() {
     <div className="booth edit">
       <header className="bar">
         <span className="mark">{BOOTH_NAME}</span>
-        <span className="bar-note">three exposures · ready</span>
+        <span className="bar-note">{STRIP.photoCount} exposures · ready</span>
       </header>
 
       <div className="edit-layout">
@@ -467,7 +468,7 @@ export function Booth() {
               </button>
             )}
             <div className="retake-row">
-              {[0, 1, 2].map((index) => (
+              {EVERY_SHOT.map((index) => (
                 <button key={index} className="button quiet small" onClick={() => retake([index])}>
                   Redo {index + 1}
                 </button>

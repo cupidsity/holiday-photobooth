@@ -474,7 +474,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
         <header className="invite-head">
           <h1 className="invite-title">{BOOTH_NAME}</h1>
           <p className="invite-lead">
-            Three photographs, one strip. {PARTY_NAME}, {PARTY_YEAR}.
+            Four photographs, one strip. {PARTY_NAME}, {PARTY_YEAR}.
           </p>
           <p className="invite-call">Tap the tree to start</p>
         </header>
