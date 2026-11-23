@@ -130,9 +130,11 @@ export function Booth() {
     [camera, grabFrame],
   )
 
-  async function openBooth() {
-    await camera.start()
+  function openBooth() {
+    // safari only hands over the camera when getUserMedia is reached straight
+    // from the tap, so nothing may be awaited before it
     setPhase('shoot')
+    camera.start()
   }
 
   function cancelSequence() {

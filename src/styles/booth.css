@@ -246,7 +246,9 @@
 .strip-surface {
   position: relative;
   width: min(86vw, 300px);
-  touch-action: none;
+  /* swiping the strip itself still scrolls the page; only a sticker under the
+     finger takes the gesture over */
+  touch-action: pan-y;
   user-select: none;
   border-radius: 6px;
   overflow: hidden;
@@ -261,6 +263,7 @@
 
 .placed-sticker {
   position: absolute;
+  touch-action: none;
   display: grid;
   place-items: center;
   cursor: grab;

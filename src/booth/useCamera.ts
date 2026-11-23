@@ -79,6 +79,16 @@ export function useCamera(videoRef: React.RefObject<HTMLVideoElement>) {
     start(facing === 'user' ? 'environment' : 'user')
   }, [facing, start])
 
+  // the video element only mounts once the booth leaves the intro screen, so
+  // the stream is re-attached whenever a fresh element shows up
+  useEffect(() => {
+    const video = videoRef.current
+    const stream = streamRef.current
+    if (!video || !stream || video.srcObject === stream) return
+    video.srcObject = stream
+    video.play().catch(() => undefined)
+  })
+
   useEffect(() => stop, [stop])
 
   return { state, facing, start, stop, flip, hasMultipleCameras }
