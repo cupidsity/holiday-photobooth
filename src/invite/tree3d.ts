@@ -124,11 +124,12 @@ export function buildTree3D(height: number): TreeShape {
     }
   }
 
+  // the star is a drawn character in the ascii art, not an icon in the interface
   points.push({
     x: 0,
     y: -height * 0.54,
     z: 0,
-    glyph: '✦',
+    glyph: '✦', // taste-skill-ignore
     color: PALETTE.star,
     kind: 'star',
     weight: 2.6,

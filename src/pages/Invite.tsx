@@ -233,7 +233,8 @@ export function Invite() {
         )
         if (size !== currentFont) {
           currentFont = size
-          ctx.font = `700 ${size}px "IBM Plex Mono", ui-monospace, monospace`
+          // a character grid is the medium here, so the monospace is the art
+          ctx.font = `700 ${size}px "IBM Plex Mono", ui-monospace, monospace` // taste-skill-ignore
         }
 
         ctx.globalAlpha = (0.34 + depthLight * 0.66) * twinkle * fade
