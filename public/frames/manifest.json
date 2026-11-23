@@ -138,14 +138,6 @@
         }
       ],
       "caption": null
-    },
-    {
-      "id": "pressed-border",
-      "name": "pressed border",
-      "kind": "strip",
-      "src": "/frames/pressed-border.svg",
-      "background": "#16412a",
-      "ink": "#eef3e9"
     }
   ]
 }

@@ -807,37 +807,8 @@ const placements = [
   ['queen-annes-lace', 548, 1752, 1.2, -10],
 ]
 
-const frameArt = placements
-  .filter(([name]) => stickers[name] || flash[name] || sigil[name])
-  .map(([name, x, y, scale, rotate]) => {
-    const piece = stickers[name] ?? flash[name] ?? sigil[name]
-    const body = typeof piece === 'string' ? piece : piece.art
-    const width = typeof piece === 'string' ? 100 : piece.width
-    const height = typeof piece === 'string' ? 100 : piece.height
-    const strokeWidth = typeof piece === 'string' ? 0 : 1.3 * FINE
-    return `  <g transform="translate(${x} ${y}) rotate(${rotate}) scale(${scale}) translate(${-width / 2} ${-height / 2})" stroke-width="${strokeWidth}">
-${body
-      .trim()
-      .split('\n')
-      .map((entry) => '    ' + entry.trim())
-      .join('\n')}
-  </g>`
-  })
-  .join('\n')
-
-writeFileSync(
-  new URL('../frames/pressed-border.svg', OUT),
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${FRAME_WIDTH}" height="${FRAME_HEIGHT}" viewBox="0 0 ${FRAME_WIDTH} ${FRAME_HEIGHT}">
-  <g fill="#dde7dc" stroke="#dde7dc" stroke-width="0" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
-${frameArt}
-  </g>
-</svg>
-`,
-)
-
-// the same border, written out as a sticker arrangement so a guest can drop it
-// on by hand and then move any piece of it. both come from `placements`, so
-// they can never drift apart
+// the border, written out as a sticker arrangement a guest drops on by hand
+// and can then move any piece of
 const borderPieces = placements
   .filter(([name]) => stickers[name] || flash[name] || sigil[name])
   .map(([name, x, y, scale, rotate]) => {
@@ -861,23 +832,4 @@ writeFileSync(
     `export const BORDER_PIECES: BorderPiece[] = ${JSON.stringify(borderPieces, null, 2)}\n`,
 )
 
-writeFileSync(
-  new URL('../frames/manifest.json', OUT),
-  JSON.stringify(
-    {
-      items: [
-        {
-          id: 'pressed-border',
-          name: 'pressed border',
-          kind: 'strip',
-          src: '/frames/pressed-border.svg',
-          background: '#16412a',
-          ink: '#eef3e9',
-        },
-      ],
-    },
-    null,
-    2,
-  ) + '\n',
-)
-console.log('wrote the pressed border frame')
+console.log('wrote the border sticker arrangement')
