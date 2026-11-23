@@ -38,13 +38,14 @@ export function bleedTop(art?: ArtBox): number {
   return art?.bleedTop ? Math.round(art.bleedTop * artScale(art)) : 0
 }
 
-// where the photos sit when a frame does not bring its own windows: the shape
-// the drawn frames share, shifted into strip space
+// where the photos sit when a frame does not bring its own windows. nothing is
+// printed over a plain stock, so all four are the same size: a drawn frame's
+// own openings are what make its windows uneven
 export const DEFAULT_WINDOWS: Window[] = [
-  { x: 80, y: 260, width: 520, height: 240 },
+  { x: 80, y: 200, width: 520, height: 320 },
   { x: 80, y: 530, width: 520, height: 320 },
   { x: 80, y: 860, width: 520, height: 320 },
-  { x: 80, y: 1190, width: 520, height: 290 },
+  { x: 80, y: 1190, width: 520, height: 320 },
 ]
 
 export const DEFAULT_CAPTION_Y = 1620
