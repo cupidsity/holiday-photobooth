@@ -1,111 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { PALETTE, TreePoint, buildSnow, buildTree3D } from '../invite/tree3d'
-import { codeGrid } from '../invite/qr'
+import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
+import { PALETTE, buildField, buildSnow, buildTree, glyphAt, rasterise } from '../invite/asciiTree'
 import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR, boothUrl } from '../lib/config'
 import '../styles/invite.css'
 
-const QUIET_MODULES = 4
-const FOCAL = 850
+const FOCAL = 900
+// how long the tree takes to grow in when the screen is first opened
+const REVEAL_MS = 3200
+const AUTO_SPIN = 0.32
+// how far the view can be tipped: a little under the tree, well over the top
+const PITCH_LOW = -0.35
+const PITCH_HIGH = 1.1
 
-// one full cycle of the invite, in milliseconds
-const HOLD_TREE = 9000
-const TURN = 2600
-const HOLD_CODE = 9000
-const CYCLE = HOLD_TREE + TURN + HOLD_CODE + TURN
-
-type Lock = 'auto' | 'tree' | 'code'
-
-type Landing = {
-  // where this glyph ends up once the code has formed, in module coordinates
-  column: number
-  row: number
+function clamp(value: number, low: number, high: number): number {
+  return value < low ? low : value > high ? high : value
 }
 
-function easeInOut(progress: number): number {
-  return progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2
-}
-
-function clamp01(value: number): number {
-  return value < 0 ? 0 : value > 1 ? 1 : value
-}
-
-// 0 is the tree turning, 1 is the code formed and held
-function formedAt(elapsed: number): number {
-  const time = elapsed % CYCLE
-  if (time < HOLD_TREE) return 0
-  if (time < HOLD_TREE + TURN) return easeInOut((time - HOLD_TREE) / TURN)
-  if (time < HOLD_TREE + TURN + HOLD_CODE) return 1
-  return 1 - easeInOut((time - HOLD_TREE - TURN - HOLD_CODE) / TURN)
-}
-
-function parseHex(hex: string): [number, number, number] {
-  return [1, 3, 5].map((offset) => parseInt(hex.slice(offset, offset + 2), 16)) as [number, number, number]
-}
-
-function mixHex(from: string, to: string, amount: number): string {
-  const [fromRed, fromGreen, fromBlue] = parseHex(from)
-  const [toRed, toGreen, toBlue] = parseHex(to)
-  const blend = (left: number, right: number) => Math.round(left + (right - left) * amount)
-  return `rgb(${blend(fromRed, toRed)}, ${blend(fromGreen, toGreen)}, ${blend(fromBlue, toBlue)})`
-}
-
-/**
- * every dark module of the code is handed the tree glyph that is already
- * nearest to where it needs to land, measured on the tree's own axis. the
- * assignment is made once, so each glyph flies a short, steady path into place
- * instead of swapping with its neighbours every frame.
- */
-function assignLandings(points: TreePoint[], cells: Landing[], size: number, height: number): (Landing | null)[] {
-  const landings: (Landing | null)[] = points.map(() => null)
-  const taken = new Set<number>()
-  const spread = height * 0.75
-
-  for (const cell of cells) {
-    // the module's place on the tree's own scale, so the match is made in one
-    // coordinate system
-    const wantX = ((cell.column - (size - 1) / 2) / size) * spread
-    const wantY = ((cell.row - (size - 1) / 2) / size) * spread
-    let best = -1
-    let bestGap = Infinity
-    for (let index = 0; index < points.length; index += 1) {
-      if (taken.has(index)) continue
-      const point = points[index]
-      const gap = (point.x - wantX) ** 2 + (point.y - wantY) ** 2 + point.z ** 2 * 0.25
-      if (gap < bestGap) {
-        bestGap = gap
-        best = index
-      }
-    }
-    if (best < 0) break
-    taken.add(best)
-    landings[best] = cell
-  }
-  return landings
+function packedToCss(packed: number): string {
+  return `rgb(${(packed >> 16) & 255}, ${(packed >> 8) & 255}, ${packed & 255})`
 }
 
 export function Invite() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const lockRef = useRef<Lock>('auto')
-  const dragRef = useRef<{ pointerId: number; lastX: number; lastTime: number } | null>(null)
+  const dragRef = useRef<{ pointerId: number; lastX: number; lastY: number; lastTime: number } | null>(null)
   const angleRef = useRef(0.34)
+  const pitchRef = useRef(0)
   const velocityRef = useRef(0)
   const spinRef = useRef(true)
-  const [lock, setLock] = useState<Lock>('auto')
-  const [showingCode, setShowingCode] = useState(false)
-  const url = useMemo(boothUrl, [])
-  const grid = useMemo(() => codeGrid(url), [url])
-
-  useEffect(() => {
-    const requested = new URLSearchParams(window.location.search).get('view')
-    if (requested === 'tree' || requested === 'code') {
-      lockRef.current = requested
-      setLock(requested)
-    }
-  }, [])
-
-  useEffect(() => {
-    lockRef.current = lock
-  }, [lock])
+  const revealFromRef = useRef(performance.now())
+  const [spinning, setSpinning] = useState(true)
+  const [readout, setReadout] = useState({ rotation: 0, lights: 0, letters: 0 })
+  const url = boothUrl()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -114,25 +38,30 @@ export function Invite() {
     if (!ctx) return
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const startedAt = performance.now()
-    let previous = startedAt
-    let frame = 0
-    let lastCodeState: boolean | null = null
-
-    const TREE_HEIGHT = 1000
-    // a tv or a laptop draws the full tree; a phone and anything with few cores
-    // gets a lighter one rather than a slideshow
     const lightweight =
       window.matchMedia('(pointer: coarse)').matches ||
-      window.innerWidth < 700 ||
+      window.innerWidth < 760 ||
       (navigator.hardwareConcurrency ?? 8) <= 4
-    const tree = buildTree3D(TREE_HEIGHT, lightweight ? 0.62 : 1)
-    const snow = buildSnow(lightweight ? 90 : 170)
-    const landings = assignLandings(tree.points, grid.cells, grid.size, TREE_HEIGHT)
-    const order = Array.from({ length: tree.points.length }, (_item, index) => index)
+
+    const TREE_HEIGHT = 1000
+    const tree = buildTree(TREE_HEIGHT, lightweight ? 0.6 : 1)
+    const snow = buildSnow(lightweight ? 70 : 150)
+    const field = buildField(lightweight ? 260 : 620)
+
+    let previous = performance.now()
+    let frame = 0
+    let lastReadout = 0
 
     let width = 0
     let height = 0
+    let columns = 0
+    let rows = 0
+    let cellWidth = 0
+    let cellHeight = 0
+    let fontSize = 0
+    let depthBuffer = new Float32Array(0)
+    let glyphBuffer = new Int16Array(0)
+    let colorBuffer = new Int32Array(0)
 
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2)
@@ -142,138 +71,116 @@ export function Invite() {
       canvas.width = Math.round(width * ratio)
       canvas.height = Math.round(height * ratio)
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
+
+      const wanted = lightweight ? 68 : 104
+      fontSize = Math.max(7, (width / wanted) / 0.6)
+      // square cells: the glyphs overlap a little vertically, which is what
+      // gives the tree its woven texture
+      cellWidth = fontSize * 0.6
+      cellHeight = cellWidth
+      columns = Math.ceil(width / cellWidth) + 1
+      rows = Math.ceil(height / cellHeight) + 1
+      const size = columns * rows
+      depthBuffer = new Float32Array(size)
+      glyphBuffer = new Int16Array(size)
+      colorBuffer = new Int32Array(size)
     }
 
     const draw = (now: number) => {
       const delta = Math.min(0.05, (now - previous) / 1000)
       previous = now
 
-      const current = lockRef.current
-      const formed =
-        current === 'auto' ? formedAt(now - startedAt) : current === 'code' ? 1 : 0
-
-      const isCode = formed > 0.6
-      if (isCode !== lastCodeState) {
-        lastCodeState = isCode
-        setShowingCode(isCode)
-      }
-
-      // the tree keeps turning while it is a tree, and holds still from the
-      // moment the glyphs start moving into the code
-      const turning = 1 - formed
       if (!reducedMotion) {
-        const wanted = spinRef.current && !dragRef.current ? 0.32 : 0
-        velocityRef.current += (wanted - velocityRef.current) * Math.min(1, delta * 2.4)
-        angleRef.current += velocityRef.current * delta * turning
+        if (dragRef.current) {
+          // while a finger is down the drag owns the rotation
+        } else if (spinRef.current) {
+          velocityRef.current += (AUTO_SPIN - velocityRef.current) * Math.min(1, delta * 1.6)
+        } else {
+          // let a flick run on and die away instead of stopping dead
+          velocityRef.current *= Math.pow(0.12, delta)
+        }
+        angleRef.current += velocityRef.current * delta
       }
 
-      ctx.fillStyle = mixHex(PALETTE.night, PALETTE.paper, formed)
+      ctx.fillStyle = PALETTE.night
       ctx.fillRect(0, 0, width, height)
 
-      const scale = Math.min(width / 760, height / 1180)
+      // the tree is taller than its own height: the star sits above the cone and
+      // the parcels sit below it, and perspective magnifies whatever is nearest.
+      // fit all of that, or the foot of the tree runs off the bottom
+      const scale = Math.min(width / 1500, height / 1580)
       const centerX = width / 2
-      const centerY = height / 2
-      const cell = Math.min(width / (grid.size + QUIET_MODULES * 2), height / (grid.size + QUIET_MODULES * 2))
-      const angleCos = Math.cos(angleRef.current)
-      const angleSin = Math.sin(angleRef.current)
-      const settle = easeInOut(clamp01((formed - 0.05) / 0.9))
+      const centerY = height * 0.52
+      const reveal = clamp((now - revealFromRef.current) / REVEAL_MS, 0, 1)
 
-      // snow falls while the tree is up and clears as the code forms
-      if (turning > 0.01) {
-        ctx.save()
-        ctx.fillStyle = PALETTE.snow
-        for (const flake of snow) {
-          flake.y = (flake.y + flake.fall * delta) % 1
-          const driftX = (flake.x + Math.sin(now * 0.0003 + flake.y * 9) * 0.01 * flake.drift) % 1
-          ctx.globalAlpha = 0.5 * turning
-          ctx.beginPath()
-          ctx.arc(driftX * width, flake.y * height, flake.size, 0, Math.PI * 2)
-          ctx.fill()
-        }
-        ctx.restore()
-      }
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.font = `${fontSize}px "IBM Plex Mono", ui-monospace, monospace` // taste-skill-ignore
 
-      const projected = order.map((index) => {
-        const point = tree.points[index]
-        const spunX = point.x * angleCos - point.z * angleSin
-        const spunZ = point.x * angleSin + point.z * angleCos
-        const perspective = FOCAL / (FOCAL - spunZ * scale)
-        const treeX = centerX + spunX * scale * perspective
-        const treeY = centerY + point.y * scale * perspective
-        const landing = landings[index]
-
-        let targetX = treeX
-        let targetY = treeY
-        if (landing) {
-          targetX = centerX + (landing.column - (grid.size - 1) / 2) * cell
-          targetY = centerY + (landing.row - (grid.size - 1) / 2) * cell
-        }
-
-        return {
-          index,
-          point,
-          depth: spunZ,
-          perspective,
-          // a glyph with nowhere to land simply falls away as the code forms
-          screenX: treeX + (targetX - treeX) * settle,
-          screenY: treeY + (targetY - treeY) * settle,
-          landing,
-        }
-      })
-
-      projected.sort((left, right) => left.depth - right.depth)
-
-      const baseSize = 14 * scale
-      let currentFont = 0
-      for (const seat of projected) {
-        const { point, landing } = seat
-        if (!landing && settle > 0.98) continue
-
-        const depthLight = clamp01((seat.depth + tree.radius * 1.4) / (tree.radius * 2.8))
-        const twinkle =
-          point.kind === 'light' ? 0.52 + 0.48 * (0.5 + 0.5 * Math.sin(now * 0.004 + point.phase)) : 1
-        const fade = landing ? 1 : 1 - settle
-        const size = Math.max(
-          5,
-          Math.round(baseSize * point.weight * (seat.perspective * turning + settle) * 2) / 2,
-        )
-        if (size !== currentFont) {
-          currentFont = size
-          // a character grid is the medium here, so the monospace is the art
-          ctx.font = `700 ${size}px "IBM Plex Mono", ui-monospace, monospace` // taste-skill-ignore
-        }
-
-        ctx.globalAlpha = (0.42 + depthLight * 0.58) * twinkle * fade
-        ctx.fillStyle = mixHex(point.color, PALETTE.ink, settle)
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        // only the lights and the star carry a glow, which is what makes them
-        // read as lit rather than just differently coloured
-        const glowing = (point.kind === 'light' || point.kind === 'star') && turning > 0.2
-        if (glowing) {
-          ctx.shadowBlur = 16 * scale * turning
-          ctx.shadowColor = point.color
-        }
-        ctx.fillText(point.glyph, seat.screenX, seat.screenY)
-        if (glowing) {
-          ctx.shadowBlur = 0
-        }
-
-        // once everything has arrived the glyphs give way to solid modules, so
-        // the last frame is a code a phone can actually read
-        if (settle > 0.86 && landing) {
-          ctx.globalAlpha = clamp01((settle - 0.86) / 0.14)
-          ctx.fillStyle = PALETTE.ink
-          ctx.fillRect(
-            Math.round(seat.screenX - cell / 2),
-            Math.round(seat.screenY - cell / 2),
-            Math.ceil(cell),
-            Math.ceil(cell),
-          )
+      ctx.fillStyle = PALETTE.rule
+      ctx.globalAlpha = 0.5 * reveal
+      for (let row = 4; row < rows; row += 9) {
+        for (let column = 2; column < columns; column += 4) {
+          ctx.fillText(column % 8 === 2 ? '-' : '.', column * cellWidth, row * cellHeight)
         }
       }
+
+      ctx.fillStyle = PALETTE.field
+      for (const mark of field) {
+        ctx.globalAlpha = (0.2 + mark.dim) * reveal
+        ctx.fillText(mark.glyph, mark.x * width, mark.y * height)
+      }
+
+      ctx.fillStyle = PALETTE.snow
+      for (const flake of snow) {
+        flake.y = (flake.y + flake.fall * delta) % 1
+        const driftX = (flake.x + Math.sin(now * 0.0003 + flake.y * 9) * 0.01 * flake.drift) % 1
+        ctx.globalAlpha = 0.25 + flake.size * 0.2
+        ctx.fillText(flake.size > 1.4 ? '*' : '·', driftX * width, flake.y * height)
+      }
+
+      const filled = rasterise(
+        tree,
+        {
+          columns,
+          rows,
+          cellWidth,
+          cellHeight,
+          angle: angleRef.current,
+          pitch: pitchRef.current,
+          reveal,
+          scale,
+          centerX,
+          centerY,
+          focal: FOCAL,
+          time: now,
+        },
+        depthBuffer,
+        glyphBuffer,
+        colorBuffer,
+      )
 
       ctx.globalAlpha = 1
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          const index = row * columns + column
+          const code = glyphBuffer[index]
+          if (code <= 0) continue
+          ctx.fillStyle = packedToCss(colorBuffer[index])
+          ctx.fillText(glyphAt(code), column * cellWidth, row * cellHeight)
+        }
+      }
+
+      if (now - lastReadout > 220) {
+        lastReadout = now
+        const turns = ((angleRef.current * 180) / Math.PI) % 360
+        setReadout({
+          rotation: turns < 0 ? turns + 360 : turns,
+          lights: tree.lightCount,
+          letters: filled,
+        })
+      }
+
       frame = requestAnimationFrame(draw)
     }
 
@@ -284,47 +191,64 @@ export function Invite() {
       cancelAnimationFrame(frame)
       window.removeEventListener('resize', resize)
     }
-  }, [grid])
+  }, [])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === ' ') {
         event.preventDefault()
         spinRef.current = !spinRef.current
+        setSpinning(spinRef.current)
       }
-      if (event.key === 'ArrowUp') setLock('code')
-      if (event.key === 'ArrowDown') setLock('tree')
-      if (event.key === 'Escape') setLock('auto')
+      if (event.key.toLowerCase() === 'r') {
+        revealFromRef.current = performance.now()
+        angleRef.current = 0.34
+        pitchRef.current = 0
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  function startDrag(event: React.PointerEvent) {
-    dragRef.current = { pointerId: event.pointerId, lastX: event.clientX, lastTime: performance.now() }
+  function startDrag(event: ReactPointerEvent) {
+    dragRef.current = {
+      pointerId: event.pointerId,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      lastTime: performance.now(),
+    }
     ;(event.target as Element).setPointerCapture?.(event.pointerId)
   }
 
-  function moveDrag(event: React.PointerEvent) {
+  function moveDrag(event: ReactPointerEvent) {
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
     const now = performance.now()
-    const travel = event.clientX - drag.lastX
-    angleRef.current += travel * 0.009
+    const across = event.clientX - drag.lastX
+    const down = event.clientY - drag.lastY
+    angleRef.current += across * 0.009
+    pitchRef.current = clamp(pitchRef.current + down * 0.004, PITCH_LOW, PITCH_HIGH)
     const elapsed = Math.max(1, now - drag.lastTime)
-    velocityRef.current = Math.max(-4, Math.min(4, (travel * 0.009 * 1000) / elapsed))
+    velocityRef.current = clamp((across * 0.009 * 1000) / elapsed, -5, 5)
     drag.lastX = event.clientX
+    drag.lastY = event.clientY
     drag.lastTime = now
   }
 
-  function endDrag(event: React.PointerEvent) {
-    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null
+  function endDrag(event: ReactPointerEvent) {
+    if (dragRef.current?.pointerId !== event.pointerId) return
+    dragRef.current = null
+    // a flick hands the tree back to its own momentum rather than the clock
+    if (Math.abs(velocityRef.current) > 0.6) {
+      spinRef.current = false
+      setSpinning(false)
+    }
   }
 
   return (
     <div className="invite">
       <div
-        className={`invite-card${showingCode ? ' formed' : ''}`}
+        className="invite-card"
         onPointerDown={startDrag}
         onPointerMove={moveDrag}
         onPointerUp={endDrag}
@@ -340,9 +264,11 @@ export function Invite() {
         <canvas ref={canvasRef} className="invite-canvas" />
 
         <footer className="invite-foot">
-          <p className="invite-hint">
-            {showingCode ? 'Scan it to start your strip' : 'Drag the tree. Watch what it becomes.'}
+          <p className="invite-readout">
+            rotation {readout.rotation.toFixed(2)}° · lights {readout.lights} · letters{' '}
+            {readout.letters.toLocaleString()} · {spinning ? 'spinning' : 'held'}
           </p>
+          <p className="invite-hint">Drag to turn it. Drag down to look over the top.</p>
           <p className="invite-url">{url.replace(/^https?:\/\//, '')}</p>
         </footer>
       </div>

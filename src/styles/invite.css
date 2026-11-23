@@ -25,13 +25,6 @@
   cursor: grabbing;
 }
 
-/* the whole sheet turns to paper as the glyphs settle into the code, which is
-   also what makes the code readable to a phone */
-.invite-card.formed {
-  background: #f6efe2;
-  color: #14241a;
-}
-
 .invite-head {
   text-align: center;
 }
@@ -71,14 +64,17 @@
   opacity: 0.8;
 }
 
-.invite-card.formed .invite-hint {
-  color: #a3162b;
-  font-weight: 500;
-  opacity: 1;
+.invite-readout {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace; /* taste-skill-ignore */
+  font-size: clamp(9px, 1.25vmin, 15px);
+  opacity: 0.45;
+  font-variant-numeric: tabular-nums;
 }
 
 .invite-url {
   margin: 0;
-  font-size: clamp(10px, 1.5vmin, 18px);
-  opacity: 0.55;
+  font-size: clamp(12px, 1.9vmin, 22px);
+  color: #ffc21f;
+  letter-spacing: 0.01em;
 }
