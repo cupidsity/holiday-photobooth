@@ -1,64 +1,40 @@
 {
   "items": [
     {
-      "id": "sigil-wings",
-      "name": "wings",
-      "group": "sigil",
-      "src": "/stickers/sigil-wings.svg"
+      "id": "vine-scroll",
+      "name": "scroll",
+      "group": "filigree",
+      "src": "/stickers/vine-scroll.svg"
     },
     {
-      "id": "sigil-crown",
-      "name": "crown",
-      "group": "sigil",
-      "src": "/stickers/sigil-crown.svg"
+      "id": "vine-branch",
+      "name": "branch",
+      "group": "filigree",
+      "src": "/stickers/vine-branch.svg"
     },
     {
-      "id": "sigil-spine",
-      "name": "spine",
-      "group": "sigil",
-      "src": "/stickers/sigil-spine.svg"
+      "id": "vine-coil",
+      "name": "coil",
+      "group": "filigree",
+      "src": "/stickers/vine-coil.svg"
     },
     {
-      "id": "sigil-bloom",
-      "name": "bloom",
-      "group": "sigil",
-      "src": "/stickers/sigil-bloom.svg"
+      "id": "vine-floret",
+      "name": "floret",
+      "group": "filigree",
+      "src": "/stickers/vine-floret.svg"
     },
     {
-      "id": "sigil-lily",
-      "name": "lily",
-      "group": "sigil",
-      "src": "/stickers/sigil-lily.svg"
+      "id": "vine-corner",
+      "name": "corner",
+      "group": "filigree",
+      "src": "/stickers/vine-corner.svg"
     },
     {
-      "id": "sigil-trail",
-      "name": "trail",
-      "group": "sigil",
-      "src": "/stickers/sigil-trail.svg"
-    },
-    {
-      "id": "sigil-heart",
-      "name": "heart",
-      "group": "sigil",
-      "src": "/stickers/sigil-heart.svg"
-    },
-    {
-      "id": "sigil-star",
-      "name": "star",
-      "group": "sigil",
-      "src": "/stickers/sigil-star.svg"
-    },
-    {
-      "id": "sigil-band",
-      "name": "band",
-      "group": "sigil",
-      "src": "/stickers/sigil-band.svg"
-    },
-    {
-      "id": "sigil-drip",
-      "name": "drip",
-      "group": "sigil",
-      "src": "/stickers/sigil-drip.svg"
+      "id": "vine-sprig",
+      "name": "sprig",
+      "group": "filigree",
+      "src": "/stickers/vine-sprig.svg"
     },
     {
       "id": "vine-trail",

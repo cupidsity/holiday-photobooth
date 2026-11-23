@@ -42,13 +42,14 @@ export const ARRANGEMENTS: Arrangement[] = [
     ],
   },
   {
-    id: 'sigil',
-    name: 'sigil',
+    id: 'filigree',
+    name: 'filigree',
     pieces: [
-      { src: '/stickers/sigil-wings.svg', x: 0.5, y: 0.07, size: 0.42, rotation: 0 },
-      { src: '/stickers/sigil-spine.svg', x: 0.13, y: 0.42, size: 0.16, rotation: 0 },
-      { src: '/stickers/sigil-spine.svg', x: 0.87, y: 0.42, size: 0.16, rotation: 0 },
-      { src: '/stickers/sigil-star.svg', x: 0.5, y: 0.93, size: 0.2, rotation: 0 },
+      { src: '/stickers/vine-scroll.svg', x: 0.14, y: 0.3, size: 0.16, rotation: 0 },
+      { src: '/stickers/vine-scroll.svg', x: 0.86, y: 0.68, size: 0.16, rotation: 3.14 },
+      { src: '/stickers/vine-curl.svg', x: 0.76, y: 0.12, size: 0.2, rotation: 0 },
+      { src: '/stickers/vine-sprig.svg', x: 0.2, y: 0.84, size: 0.13, rotation: 0.2 },
+      { src: '/stickers/vine-bloom.svg', x: 0.82, y: 0.93, size: 0.16, rotation: -0.2 },
     ],
   },
   {

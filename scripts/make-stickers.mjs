@@ -291,152 +291,195 @@ const stipple = (cx, cy, radius, count, seed = 1) =>
     return `<circle cx="${(cx + Math.cos(angle) * distance).toFixed(1)}" cy="${(cy + Math.sin(angle) * distance).toFixed(1)}" r="${(0.5 + first * 1.3).toFixed(1)}" />`
   }).join('')
 
+// a cubic, and its tangent, so a branch can be drawn as a filled shape that
+// tapers along the curve rather than as a stroke of constant width
+const along = (t, a, b, c, d) => {
+  const back = 1 - t
+  return back * back * back * a + 3 * back * back * t * b + 3 * back * t * t * c + t * t * t * d
+}
+const slope = (t, a, b, c, d) => {
+  const back = 1 - t
+  return 3 * back * back * (b - a) + 6 * back * t * (c - b) + 3 * t * t * (d - c)
+}
+
+// the branch: wide where it leaves the branch, a point where it ends
+const branch = (p0, p1, p2, p3, rootWidth, tipWidth = 0, steps = 30) => {
+  const left = []
+  const right = []
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps
+    const x = along(t, p0[0], p1[0], p2[0], p3[0])
+    const y = along(t, p0[1], p1[1], p2[1], p3[1])
+    const dx = slope(t, p0[0], p1[0], p2[0], p3[0])
+    const dy = slope(t, p0[1], p1[1], p2[1], p3[1])
+    const length = Math.hypot(dx, dy) || 1
+    const outX = -dy / length
+    const outY = dx / length
+    const half = (rootWidth + (tipWidth - rootWidth) * t) / 2
+    left.push(`${(x + outX * half).toFixed(1)} ${(y + outY * half).toFixed(1)}`)
+    right.push(`${(x - outX * half).toFixed(1)} ${(y - outY * half).toFixed(1)}`)
+  }
+  return `<path d="M${left.join(' L')} L${right.reverse().join(' L')} Z" stroke-width="0" />`
+}
+
+// a branch that curls in on itself, the way a young shoot does
+const coil = (cx, cy, radius, turns, from, rootWidth, steps = 46) => {
+  const left = []
+  const right = []
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps
+    const angle = (from + turns * 360 * t) * (Math.PI / 180)
+    const reach = radius * (1 - t * 0.82)
+    const x = cx + Math.cos(angle) * reach
+    const y = cy + Math.sin(angle) * reach
+    const outX = Math.cos(angle)
+    const outY = Math.sin(angle)
+    const half = (rootWidth * (1 - t)) / 2
+    left.push(`${(x + outX * half).toFixed(1)} ${(y + outY * half).toFixed(1)}`)
+    right.push(`${(x - outX * half).toFixed(1)} ${(y - outY * half).toFixed(1)}`)
+  }
+  return `<path d="M${left.join(' L')} L${right.reverse().join(' L')} Z" stroke-width="0" />`
+}
+
+// a solid almond frond, base to tip
+const frond = (x, y, angle, length, width) => {
+  const rad = angle * (Math.PI / 180)
+  const dirX = Math.cos(rad)
+  const dirY = Math.sin(rad)
+  const outX = -dirY
+  const outY = dirX
+  const fix = (value) => value.toFixed(1)
+  const tipX = x + dirX * length
+  const tipY = y + dirY * length
+  const midX = x + dirX * length * 0.42
+  const midY = y + dirY * length * 0.42
+  return `<path d="M${fix(x)} ${fix(y)} Q${fix(midX + outX * width)} ${fix(midY + outY * width)} ${fix(tipX)} ${fix(tipY)} Q${fix(midX - outX * width)} ${fix(midY - outY * width)} ${fix(x)} ${fix(y)} Z" stroke-width="0" />`
+}
+
+// five petals with the middle punched out, so the flower keeps an eye
+const floret = (cx, cy, radius, rotate = 0) => {
+  const petals = Array.from({ length: 5 }, (unused, index) => {
+    const angle = rotate + index * 72 - 90
+    const rad = angle * (Math.PI / 180)
+    const dirX = Math.cos(rad)
+    const dirY = Math.sin(rad)
+    const outX = -dirY
+    const outY = dirX
+    const fix = (value) => value.toFixed(1)
+    const tipX = cx + dirX * radius
+    const tipY = cy + dirY * radius
+    const midX = cx + dirX * radius * 0.45
+    const midY = cy + dirY * radius * 0.45
+    const wide = radius * 0.42
+    return `M${fix(cx)} ${fix(cy)} Q${fix(midX + outX * wide)} ${fix(midY + outY * wide)} ${fix(tipX)} ${fix(tipY)} Q${fix(midX - outX * wide)} ${fix(midY - outY * wide)} ${fix(cx)} ${fix(cy)} Z`
+  }).join(' ')
+  const eye = radius * 0.2
+  const hole = `M${(cx - eye).toFixed(1)} ${cy.toFixed(1)} a ${eye.toFixed(1)} ${eye.toFixed(1)} 0 1 0 ${(eye * 2).toFixed(1)} 0 a ${eye.toFixed(1)} ${eye.toFixed(1)} 0 1 0 ${(-eye * 2).toFixed(1)} 0 Z`
+  return `<path fill-rule="evenodd" d="${petals} ${hole}" stroke-width="0" />`
+}
+
+const glint = (cx, cy, radius) => {
+  const fix = (value) => value.toFixed(1)
+  const thin = radius * 0.17
+  return `<path d="M${fix(cx)} ${fix(cy - radius)} Q${fix(cx + thin)} ${fix(cy - thin)} ${fix(cx + radius)} ${fix(cy)} Q${fix(cx + thin)} ${fix(cy + thin)} ${fix(cx)} ${fix(cy + radius)} Q${fix(cx - thin)} ${fix(cy + thin)} ${fix(cx - radius)} ${fix(cy)} Q${fix(cx - thin)} ${fix(cy - thin)} ${fix(cx)} ${fix(cy - radius)} Z" stroke-width="0" />`
+}
+
 const sigil = {
-  'sigil-wings': {
-    width: 230,
-    height: 150,
+  'vine-scroll': {
+    width: 180,
+    height: 420,
     art: `
-      ${spine(115, 16, 138, 7)}
-      ${pair(115, 110, 58, 182, 104, 5, -0.1, -0.3)}
-      ${pair(115, 110, 66, 176, 88, 4, -0.04, -0.2)}
-      ${pair(115, 110, 74, 170, 70, 3.4, 0.03, -0.1)}
-      ${pair(115, 110, 82, 163, 52, 2.8, 0.06, 0.02)}
-      ${pair(115, 110, 92, 156, 34, 2.2, 0.08, 0.1)}
-      ${star5(115, 8, 8)}
-      ${star5(40, 120, 6)}
-      ${star5(190, 120, 6)}
+      ${branch([96, 412], [40, 330], [150, 270], [96, 196], 15, 5)}
+      ${branch([96, 196], [52, 136], [140, 104], [104, 28], 5, 1.5)}
+      ${coil(126, 34, 26, 0.75, 150, 5)}
+      ${branch([92, 330], [50, 300], [34, 258], [46, 220], 6, 1.5)}
+      ${coil(44, 212, 18, 0.7, 120, 4)}
+      ${branch([100, 268], [142, 246], [150, 206], [132, 176], 5.5, 1.5)}
+      ${coil(130, 170, 16, 0.65, 70, 4)}
+      ${branch([94, 372], [136, 350], [150, 310], [136, 284], 5, 1.5)}
+      ${frond(92, 356, -150, 46, 13)}
+      ${frond(98, 300, -22, 40, 11)}
+      ${frond(92, 244, -158, 38, 11)}
+      ${frond(100, 180, -14, 34, 10)}
+      ${frond(98, 124, -164, 30, 9)}
+      ${floret(120, 60, 30, 12)}
+      ${floret(48, 266, 19, 40)}
+      ${floret(140, 330, 16, 20)}
+      ${glint(60, 112, 9)} ${glint(148, 160, 7)} ${glint(40, 180, 6)}
+      ${glint(132, 240, 6)} ${glint(56, 392, 7)} ${glint(156, 388, 5)}
     `,
   },
-  'sigil-crown': {
-    width: 200,
-    height: 180,
+  'vine-branch': {
+    width: 170,
+    height: 300,
     art: `
-      ${spine(100, 8, 170, 6)}
-      ${pair(100, 96, 164, -108, 150, 5, 0.06, 0.2)}
-      ${pair(100, 96, 160, -122, 128, 4.2, 0.04, 0.26)}
-      ${pair(100, 96, 154, -136, 102, 3.4, 0.02, 0.3)}
-      ${pair(100, 96, 146, -150, 74, 2.6, 0, 0.3)}
-      ${star5(100, 10, 8)}
-      ${star5(22, 60, 5)}
-      ${star5(178, 60, 5)}
+      ${branch([84, 292], [34, 232], [132, 186], [80, 118], 13, 4)}
+      ${branch([80, 118], [48, 82], [112, 60], [92, 20], 4, 1.4)}
+      ${coil(110, 26, 20, 0.7, 150, 4.5)}
+      ${branch([82, 230], [124, 212], [136, 176], [120, 150], 5, 1.5)}
+      ${coil(118, 144, 15, 0.65, 70, 4)}
+      ${frond(80, 258, -152, 42, 12)}
+      ${frond(86, 198, -20, 36, 10)}
+      ${frond(80, 150, -160, 32, 9)}
+      ${floret(44, 196, 22, 25)}
+      ${floret(126, 92, 17, 50)}
+      ${glint(132, 240, 7)} ${glint(40, 120, 6)} ${glint(140, 36, 5)}
     `,
   },
-  'sigil-spine': {
+  'vine-coil': {
+    width: 170,
+    height: 170,
+    art: `
+      ${branch([16, 160], [66, 152], [96, 124], [106, 76], 7, 2)}
+      ${coil(118, 64, 28, 0.9, 170, 4.5)}
+      ${branch([48, 152], [72, 130], [62, 100], [38, 88], 4.2, 1.2)}
+      ${coil(34, 80, 14, 0.6, 30, 3.6)}
+      ${frond(58, 142, -34, 38, 11)}
+      ${frond(88, 108, -150, 30, 9)}
+      ${floret(30, 40, 22, 15)}
+      ${glint(120, 134, 7)} ${glint(150, 100, 5)}
+    `,
+  },
+  'vine-floret': {
+    width: 150,
+    height: 170,
+    art: `
+      ${floret(76, 54, 36, 10)}
+      ${branch([76, 88], [58, 116], [92, 138], [70, 166], 5.5, 1.8)}
+      ${frond(74, 120, -158, 38, 11)}
+      ${frond(78, 142, -16, 32, 9)}
+      ${floret(124, 112, 16, 40)}
+      ${glint(22, 100, 8)} ${glint(130, 28, 6)}
+    `,
+  },
+  'vine-corner': {
+    width: 220,
+    height: 200,
+    art: `
+      ${branch([12, 192], [84, 190], [146, 156], [184, 78], 8, 2.4)}
+      ${coil(194, 62, 22, 0.8, 140, 4)}
+      ${branch([88, 186], [114, 152], [106, 118], [78, 104], 4.6, 1.3)}
+      ${coil(70, 98, 16, 0.65, 20, 4)}
+      ${frond(52, 188, -46, 42, 12)}
+      ${frond(124, 162, -140, 36, 10)}
+      ${frond(160, 116, -34, 30, 9)}
+      ${floret(40, 120, 24, 20)}
+      ${floret(154, 40, 17, 45)}
+      ${glint(110, 60, 8)} ${glint(206, 142, 6)} ${glint(16, 58, 5)}
+    `,
+  },
+  'vine-sprig': {
     width: 120,
-    height: 250,
+    height: 240,
     art: `
-      ${spine(60, 10, 240, 6)}
-      ${pair(60, 56, 70, -148, 86, 4.4, 0.05, 0.26)}
-      ${pair(60, 56, 104, -152, 74, 3.8, 0.05, 0.26)}
-      ${pair(60, 56, 138, -156, 60, 3.2, 0.04, 0.24)}
-      ${pair(60, 56, 170, -160, 46, 2.6, 0.04, 0.22)}
-      ${pair(60, 56, 198, -164, 32, 2, 0.03, 0.2)}
-      ${star5(60, 6, 7)}
-    `,
-  },
-  'sigil-bloom': {
-    width: 210,
-    height: 260,
-    art: `
-      ${Array.from({ length: 6 }, (unused, index) => {
-        const angle = -90 + (index - 2.5) * 30
-        return strand(105, 86, angle, 76 - Math.abs(index - 2.5) * 7, 4.4, 0.06, 0.22 * (index < 3 ? -1 : 1))
-      }).join('\n')}
-      ${Array.from({ length: 6 }, (unused, index) => {
-        const angle = -90 + (index - 2.5) * 22
-        return strand(105, 86, angle, 34, 2.6, 0.04, 0.12 * (index < 3 ? -1 : 1))
-      }).join('\n')}
-      <circle cx="105" cy="86" r="5" />
-      ${stipple(105, 86, 20, 26, 3)}
-      ${spine(105, 92, 244, 6)}
-      ${pair(105, 101, 128, 96, 68, 3.6, 0.06, 0.26)}
-      ${pair(105, 101, 170, 100, 52, 3, 0.05, 0.24)}
-      ${pair(105, 101, 206, 104, 36, 2.4, 0.04, 0.2)}
-      ${star5(172, 36, 8)}
-      ${star5(34, 48, 6)}
-    `,
-  },
-  'sigil-lily': {
-    width: 200,
-    height: 250,
-    art: `
-      ${Array.from({ length: 5 }, (unused, index) => {
-        const angle = -90 + (index - 2) * 36
-        return strand(100, 80, angle, 84 - Math.abs(index - 2) * 10, 5, 0.05, 0.2 * (index < 2 ? -1 : index > 2 ? 1 : 0))
-      }).join('\n')}
-      ${Array.from({ length: 5 }, (unused, index) => strand(100, 80, -90 + (index - 2) * 20, 36, 2.4, 0, 0.1))}
-      <circle cx="100" cy="80" r="4.5" />
-      ${stipple(100, 80, 17, 22, 5)}
-      ${spine(100, 86, 238, 5)}
-      ${pair(100, 96, 124, 98, 60, 3.2, 0.05, 0.25)}
-      ${pair(100, 96, 168, 102, 44, 2.6, 0.04, 0.22)}
-      ${star5(166, 30, 7)}
-      ${star5(30, 40, 5)}
-    `,
-  },
-  'sigil-trail': {
-    width: 150,
-    height: 260,
-    art: `
-      ${spine(75, 10, 250, 5)}
-      ${pair(75, 71, 48, -150, 70, 3.8, 0.04, 0.24)}
-      ${pair(75, 79, 92, 128, 64, 3.4, 0.05, 0.24)}
-      ${pair(75, 71, 136, -154, 56, 3, 0.04, 0.22)}
-      ${pair(75, 79, 180, 132, 48, 2.6, 0.05, 0.22)}
-      ${pair(75, 71, 220, -158, 38, 2.2, 0.04, 0.2)}
-      ${star5(75, 6, 7)}
-      ${star5(128, 112, 5)}
-      ${star5(22, 176, 5)}
-    `,
-  },
-  'sigil-heart': {
-    width: 200,
-    height: 190,
-    art: `
-      ${pair(100, 100, 176, -112, 96, 8, -0.3, -0.52)}
-      ${pair(100, 100, 172, -132, 70, 5, -0.22, -0.46)}
-      ${spine(100, 54, 180, 7)}
-      ${pair(100, 96, 96, -168, 54, 3.4, 0.04, 0.26)}
-      ${star5(100, 20, 8)}
-      ${star5(26, 82, 5)}
-      ${star5(174, 82, 5)}
-    `,
-  },
-  'sigil-star': {
-    width: 210,
-    height: 210,
-    art: `
-      ${[-90, 0, 90, 180].map((angle) => strand(105, 105, angle, 98, 6, 0.02, 0.06)).join('\n')}
-      ${[-45, 45, 135, -135].map((angle) => strand(105, 105, angle, 52, 3.4, 0.03, 0.1)).join('\n')}
-      <circle cx="105" cy="105" r="5" />
-      ${star5(176, 36, 7)}
-      ${star5(34, 172, 5)}
-    `,
-  },
-  'sigil-band': {
-    width: 260,
-    height: 110,
-    art: `
-      ${spine(130, 18, 92, 6)}
-      ${pair(130, 124, 55, 178, 118, 5, -0.06, -0.2)}
-      ${pair(130, 124, 55, 172, 92, 4, 0.02, -0.1)}
-      ${pair(130, 124, 55, 166, 64, 3.2, 0.05, 0.02)}
-      ${star5(130, 10, 7)}
-      ${star5(44, 94, 5)}
-      ${star5(216, 94, 5)}
-    `,
-  },
-  'sigil-drip': {
-    width: 150,
-    height: 250,
-    art: `
-      ${strand(75, 20, 92, 190, 9, 0.04, 0.12)}
-      ${strand(75, 26, 78, 150, 6, 0.06, -0.2)}
-      ${strand(75, 32, 106, 130, 5, -0.06, 0.24)}
-      ${strand(75, 22, 64, 92, 3.6, 0.04, -0.24)}
-      ${star5(75, 8, 8)}
-      ${star5(126, 132, 5)}
-      ${star5(26, 176, 5)}
+      ${branch([58, 232], [34, 180], [84, 140], [62, 86], 9, 3)}
+      ${branch([62, 86], [44, 58], [80, 44], [66, 16], 3, 1.2)}
+      ${coil(78, 20, 14, 0.6, 150, 3.4)}
+      ${frond(56, 200, -150, 36, 10)}
+      ${frond(62, 160, -24, 32, 9)}
+      ${frond(58, 118, -158, 28, 8)}
+      ${floret(92, 170, 17, 30)}
+      ${glint(26, 140, 6)} ${glint(98, 92, 5)}
     `,
   },
 }
@@ -579,8 +622,8 @@ const manifest = {
   items: [
     ...Object.keys(sigil).map((name) => ({
       id: name,
-      name: name.replace(/^sigil-/, '').replace(/-/g, ' '),
-      group: 'sigil',
+      name: name.replace(/^vine-/, '').replace(/-/g, ' '),
+      group: 'filigree',
       src: `/stickers/${name}.svg`,
     })),
     ...Object.keys(flash).map((name) => ({

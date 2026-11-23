@@ -79,7 +79,7 @@ type StickerTrayProps = {
   onPick: (sticker: Sticker) => void
 }
 
-const GROUP_ORDER = ['sigil', 'fine line', 'pressed', 'words']
+const GROUP_ORDER = ['filigree', 'fine line', 'pressed', 'words']
 
 export function StickerTray({ stickers, onPick }: StickerTrayProps) {
   const groups = GROUP_ORDER.map((group) => ({
