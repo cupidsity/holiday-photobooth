@@ -1,4 +1,4 @@
-import { PointerEvent as ReactPointerEvent, useEffect, useRef } from 'react'
+import { PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react'
 import {
   PALETTE,
   SHOOTING_LIFE,
@@ -19,6 +19,10 @@ const FOCAL = 900
 // how long the tree takes to grow in when the screen is first opened
 const REVEAL_MS = 3200
 const AUTO_SPIN = 0.32
+// how long the tree takes to come apart once it has been tapped
+const DISSOLVE_MS = 1500
+// what a character turns into on its way out
+const DISSOLVE_RAMP = ['@', '#', '*', '+', '=', '-', '~', '·', '.']
 // the view tips up over the tree but never under it: from below the cone turns
 // inside out and the whole thing stops reading as a tree
 const PITCH_LOW = 0
@@ -28,18 +32,36 @@ function clamp(value: number, low: number, high: number): number {
   return value < low ? low : value > high ? high : value
 }
 
+// a stable number per cell, so a glyph keeps its own moment and its own
+// direction for the whole dissolve instead of flickering
+function cellSeed(column: number, row: number): number {
+  return Math.abs(Math.sin(column * 12.9898 + row * 78.233) * 43758.5453) % 1
+}
+
 function packedToCss(packed: number): string {
   return `rgb(${(packed >> 16) & 255}, ${(packed >> 8) & 255}, ${packed & 255})`
 }
 
-export function Invite() {
+export function Invite({ onEnter }: { onEnter: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const dragRef = useRef<{ pointerId: number; lastX: number; lastY: number; lastTime: number } | null>(null)
+  const dragRef = useRef<{
+    pointerId: number
+    lastX: number
+    lastY: number
+    lastTime: number
+    travel: number
+  } | null>(null)
   const angleRef = useRef(0.34)
   const pitchRef = useRef(0)
   const velocityRef = useRef(0)
   const spinRef = useRef(true)
   const revealFromRef = useRef(performance.now())
+  const dissolveFromRef = useRef<number | null>(null)
+  const leavingRef = useRef(false)
+  // held in a ref so the render loop never has to be torn down and rebuilt
+  const enterRef = useRef(onEnter)
+  enterRef.current = onEnter
+  const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -60,7 +82,7 @@ export function Invite() {
     const tree = buildTree(
       TREE_HEIGHT,
       lightweight ? 0.62 : 1,
-      portrait ? 0.62 : 1,
+      portrait ? 0.9 : 1,
       portrait ? 0.41 : 0.46,
     )
     const snow = buildSnow(lightweight ? 70 : 150)
@@ -132,9 +154,14 @@ export function Invite() {
       const delta = Math.min(0.05, (now - previous) / 1000)
       previous = now
 
+      const dissolveFrom = dissolveFromRef.current
+      const dissolve =
+        dissolveFrom === null ? 0 : clamp((now - dissolveFrom) / DISSOLVE_MS, 0, 1)
+      const standing = 1 - dissolve
+
       // the tree holds still under a finger and picks its spin back up the
       // moment it is let go
-      if (!reducedMotion && !dragRef.current) {
+      if (!reducedMotion && !dragRef.current && dissolve === 0) {
         const wanted = spinRef.current ? AUTO_SPIN : 0
         velocityRef.current += (wanted - velocityRef.current) * Math.min(1, delta * 2.2)
         angleRef.current += velocityRef.current * delta
@@ -172,7 +199,7 @@ export function Invite() {
       ctx.font = `${fontSize}px "IBM Plex Mono", ui-monospace, monospace` // taste-skill-ignore
 
       ctx.fillStyle = PALETTE.rule
-      ctx.globalAlpha = 0.5 * reveal
+      ctx.globalAlpha = 0.5 * reveal * standing
       for (let row = 4; row < rows; row += 9) {
         for (let column = 2; column < columns; column += 4) {
           ctx.fillText(column % 8 === 2 ? '-' : '.', column * cellWidth, row * cellHeight)
@@ -181,7 +208,7 @@ export function Invite() {
 
       ctx.fillStyle = PALETTE.field
       for (const mark of field) {
-        ctx.globalAlpha = (0.2 + mark.dim) * reveal
+        ctx.globalAlpha = (0.2 + mark.dim) * reveal * standing
         ctx.fillText(mark.glyph, mark.x * width, mark.y * height)
       }
 
@@ -209,7 +236,7 @@ export function Invite() {
           if (mark.column < 0 || mark.column >= columns || mark.row < 0 || mark.row >= rows) continue
           if (glyphBuffer[mark.row * columns + mark.column] > 0) continue
           const heat = 1 - age / SHOOTING_LIFE
-          ctx.globalAlpha = heat * reveal
+          ctx.globalAlpha = heat * reveal * standing
           ctx.fillStyle = heat > 0.82 ? '#ffffff' : PALETTE.snow
           ctx.fillText(shootingGlyph(age), mark.column * cellWidth, mark.row * cellHeight)
         }
@@ -219,7 +246,7 @@ export function Invite() {
       for (const flake of snow) {
         flake.y = (flake.y + flake.fall * delta) % 1
         const driftX = (flake.x + Math.sin(now * 0.0003 + flake.y * 9) * 0.01 * flake.drift) % 1
-        ctx.globalAlpha = 0.25 + flake.size * 0.2
+        ctx.globalAlpha = (0.25 + flake.size * 0.2) * standing
         ctx.fillText(flake.size > 1.4 ? '*' : '·', driftX * width, flake.y * height)
       }
 
@@ -229,9 +256,32 @@ export function Invite() {
           const index = row * columns + column
           const code = glyphBuffer[index]
           if (code <= 0) continue
+
+          if (dissolve === 0) {
+            ctx.globalAlpha = 1
+            ctx.fillStyle = packedToCss(colorBuffer[index])
+            ctx.fillText(glyphAt(code), column * cellWidth, row * cellHeight)
+            continue
+          }
+
+          // every character thins out through the ramp and drifts off on its
+          // own heading, so the tree comes apart rather than fading as a sheet
+          const seed = cellSeed(column, row)
+          const gone = clamp((dissolve - seed * 0.45) / 0.5, 0, 1)
+          if (gone >= 1) continue
+          ctx.globalAlpha = 1 - gone
           ctx.fillStyle = packedToCss(colorBuffer[index])
-          ctx.fillText(glyphAt(code), column * cellWidth, row * cellHeight)
+          ctx.fillText(
+            DISSOLVE_RAMP[Math.min(DISSOLVE_RAMP.length - 1, Math.floor(gone * DISSOLVE_RAMP.length))],
+            column * cellWidth + (seed - 0.5) * gone * cellWidth * 7,
+            row * cellHeight - gone * cellHeight * 4,
+          )
         }
+      }
+
+      if (dissolve >= 1 && !leavingRef.current) {
+        leavingRef.current = true
+        enterRef.current()
       }
 
       frame = requestAnimationFrame(draw)
@@ -263,11 +313,13 @@ export function Invite() {
   }, [])
 
   function startDrag(event: ReactPointerEvent) {
+    if (dissolveFromRef.current !== null) return
     dragRef.current = {
       pointerId: event.pointerId,
       lastX: event.clientX,
       lastY: event.clientY,
       lastTime: performance.now(),
+      travel: 0,
     }
     ;(event.target as Element).setPointerCapture?.(event.pointerId)
   }
@@ -282,20 +334,27 @@ export function Invite() {
     pitchRef.current = clamp(pitchRef.current + down * 0.004, PITCH_LOW, PITCH_HIGH)
     const elapsed = Math.max(1, now - drag.lastTime)
     velocityRef.current = clamp((across * 0.009 * 1000) / elapsed, -5, 5)
+    drag.travel += Math.abs(across) + Math.abs(down)
     drag.lastX = event.clientX
     drag.lastY = event.clientY
     drag.lastTime = now
   }
 
   function endDrag(event: ReactPointerEvent) {
-    if (dragRef.current?.pointerId !== event.pointerId) return
+    const drag = dragRef.current
+    if (drag?.pointerId !== event.pointerId) return
     dragRef.current = null
+    // a tap rather than a turn: take the tree apart and open the booth
+    if (drag.travel < 6 && dissolveFromRef.current === null) {
+      dissolveFromRef.current = performance.now()
+      setLeaving(true)
+    }
   }
 
   return (
     <div className="invite">
       <div
-        className="invite-card"
+        className={`invite-card${leaving ? ' leaving' : ''}`}
         onPointerDown={startDrag}
         onPointerMove={moveDrag}
         onPointerUp={endDrag}
@@ -306,6 +365,7 @@ export function Invite() {
           <p className="invite-lead">
             Three photographs, one strip. {PARTY_NAME}, {PARTY_YEAR}.
           </p>
+          <p className="invite-call">Tap the tree to start</p>
         </header>
 
         <canvas ref={canvasRef} className="invite-canvas" />

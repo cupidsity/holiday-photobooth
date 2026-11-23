@@ -132,6 +132,38 @@ button {
   font-size: var(--fs-small);
 }
 
+.layer {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+}
+
+.layer.settled {
+  position: static;
+  overflow: visible;
+}
+
+/* the booth comes up through the dark the tree left behind */
+.booth-layer {
+  background: var(--ground);
+  animation: lights-up 900ms ease both;
+}
+
+@keyframes lights-up {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .booth-layer {
+    animation-duration: 1ms;
+  }
+}
+
 .mark {
   font-family: var(--serif);
   font-size: 18px;

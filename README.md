@@ -30,17 +30,7 @@ node scripts/make-stickers.mjs   # redraws every sticker and the border frame
 
 push to github and import the repo on vercel — it is a plain vite app, the
 defaults are right (`npm run build`, output `dist`). `vercel.json` already
-rewrites every path to `index.html` so `/invite` loads on a hard refresh.
-
-then set one environment variable in the vercel project so the invite encodes
-the real address:
-
-```
-VITE_BOOTH_URL = https://your-project.vercel.app
-```
-
-redeploy after setting it — vite bakes env vars in at build time. you can always
-override it for a test with `/invite?url=https://example.com`.
+rewrites every path to `index.html`.
 
 ## the strip
 
@@ -63,14 +53,14 @@ override it for a test with `/invite?url=https://example.com`.
 
 the strip exports at 600x1800, a real 2x6in photobooth strip at 300dpi.
 
-## the tv screen
+## the tree
 
-open `/invite` fullscreen on the tv. an ascii christmas tree with real depth,
-turning on its own, with shaded baubles, a wound garland, a gold star and a pile
-of wrapped presents at its foot. it grows in from the ground when the screen
-first opens.
+the screen opens on it, so it is also what goes on the tv. it grows in from the
+ground, turns on its own, and carries shaded baubles, a wound garland, a gold
+star and a pile of wrapped presents at its foot.
 
-- **drag** — turn the tree; a flick keeps its own momentum
+- **tap** — the characters dissolve and the booth comes up
+- **drag** — turn the tree; it holds still while you hold it
 - **drag down** — tip the view up over the top of it
 - **space** — stop or restart the spin
 - **r** — reset the view and play the reveal again
@@ -82,10 +72,13 @@ grid picks the character from a brightness ramp. that is why the shaded side
 fills with `.` and `-` while the lit side fills with `@` and `%`, and why a
 bauble reads as a ball — each one is its own little sphere of samples.
 
-the guests get to the booth from the url printed under the tree. an earlier
-version had the tree tip over and land as a scannable qr code; it is in the git
-history (`rebuild the invite as a volumetric ascii tree that flies into
-formation as the qr code`) if you want it back.
+on a phone the cone is drawn slimmer, the parcels pull in, the garland drops to
+one strand and the grid is coarser, because a narrow screen is what caps how big
+the tree can be drawn.
+
+an earlier version had the tree tip over and land as a scannable qr code; it is
+in the git history (`rebuild the invite as a volumetric ascii tree that flies
+into formation as the qr code`) if you want it back.
 
 ## your own art
 

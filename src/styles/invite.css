@@ -46,6 +46,20 @@
   opacity: 0.72;
 }
 
+.invite-call {
+  margin: 0.4em 0 0;
+  font-size: clamp(10px, 1.2vmin, 15px);
+  letter-spacing: 0.04em;
+  color: #ffc21f;
+  opacity: 0.85;
+}
+
+/* the header steps aside while the tree comes apart */
+.invite-card.leaving .invite-head {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
 .invite-canvas {
   flex: 1;
   width: 100%;

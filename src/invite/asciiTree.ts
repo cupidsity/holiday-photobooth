@@ -200,18 +200,25 @@ export function buildTree(height: number, density = 1, spread = 1, girth = 0.46)
   // strands deep rather than one, which is what gives it the weight of a real
   // piece of tinsel instead of a drawn line
   const garlandSteps = Math.round(2200 * density)
-  const garlandThickness = height * 0.006
+  const garlandThickness = height * 0.0085
+  // the radius of the needles at a given height, sawtooth tiers and all
+  const coneRadius = (at: number) => {
+    const tier = (at * 7) % 1
+    return baseRadius * (0.04 + at * 0.96) * (0.72 + tier * 0.28)
+  }
+
   for (let step = 0; step < garlandSteps; step += 1) {
     const down = 0.14 + (step / garlandSteps) * 0.84
-    // the garland rides on the widest the tree ever gets at this height, not on
-    // the tiered surface: follow the sawtooth and every tier's overhang eats
-    // the strand and the spiral comes apart
-    const radius = baseRadius * (0.04 + down * 0.96) * 1.08
+    // hug the branches, but never sit inside whatever is overhanging from just
+    // above: follow the sawtooth exactly and each tier's lip eats the strand,
+    // ride outside the whole cone and the strand floats off the tree
+    const radius =
+      Math.max(coneRadius(down), coneRadius(down - 0.015), coneRadius(down - 0.03)) * 1.04
     const theta = down * Math.PI * 10
     const cos = Math.cos(theta)
     const sin = Math.sin(theta)
     const color = step % 9 < 5 ? '#ffc21f' : '#fff0c0'
-    const strands = slimGarland ? 0 : 1
+    const strands = slimGarland ? 0 : 2
     for (let strand = 0; strand <= strands; strand += 1) {
       samples.push({
         x: cos * (radius + strand * garlandThickness * 0.4),
@@ -255,7 +262,8 @@ export function buildTree(height: number, density = 1, spread = 1, girth = 0.46)
   // instead of collapsing to a streak when it turns edge on
   for (let box = 0; box < 8; box += 1) {
     const angle = (box / 8) * Math.PI * 2 + 0.6
-    const away = baseRadius * (0.66 + random() * 0.5) * spread
+    // just clear of the skirt, or the lowest branches hide the whole pile
+    const away = baseRadius * (0.95 + random() * 0.35) * spread
     const wide = height * (0.075 + random() * 0.05)
     const tall = wide * (0.62 + random() * 0.4)
     const deep = wide * (0.72 + random() * 0.35)
@@ -264,7 +272,7 @@ export function buildTree(height: number, density = 1, spread = 1, girth = 0.46)
     const yawSin = Math.sin(yaw)
     const standX = Math.cos(angle) * away
     const standZ = Math.sin(angle) * away
-    const floor = height * 0.54
+    const floor = height * 0.585
     const paper = GIFT_COLORS[box % GIFT_COLORS.length]
     const ribbon = RIBBON_COLORS[box % RIBBON_COLORS.length]
     const step = Math.max(3, Math.round(wide / 7))
