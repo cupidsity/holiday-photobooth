@@ -7,16 +7,34 @@
       "src": "/stickers/sigil-wings.svg"
     },
     {
+      "id": "sigil-crown",
+      "name": "crown",
+      "group": "sigil",
+      "src": "/stickers/sigil-crown.svg"
+    },
+    {
       "id": "sigil-spine",
       "name": "spine",
       "group": "sigil",
       "src": "/stickers/sigil-spine.svg"
     },
     {
-      "id": "sigil-crown",
-      "name": "crown",
+      "id": "sigil-bloom",
+      "name": "bloom",
       "group": "sigil",
-      "src": "/stickers/sigil-crown.svg"
+      "src": "/stickers/sigil-bloom.svg"
+    },
+    {
+      "id": "sigil-lily",
+      "name": "lily",
+      "group": "sigil",
+      "src": "/stickers/sigil-lily.svg"
+    },
+    {
+      "id": "sigil-trail",
+      "name": "trail",
+      "group": "sigil",
+      "src": "/stickers/sigil-trail.svg"
     },
     {
       "id": "sigil-heart",
@@ -31,22 +49,16 @@
       "src": "/stickers/sigil-star.svg"
     },
     {
-      "id": "sigil-drip",
-      "name": "drip",
-      "group": "sigil",
-      "src": "/stickers/sigil-drip.svg"
-    },
-    {
-      "id": "sigil-cluster",
-      "name": "cluster",
-      "group": "sigil",
-      "src": "/stickers/sigil-cluster.svg"
-    },
-    {
       "id": "sigil-band",
       "name": "band",
       "group": "sigil",
       "src": "/stickers/sigil-band.svg"
+    },
+    {
+      "id": "sigil-drip",
+      "name": "drip",
+      "group": "sigil",
+      "src": "/stickers/sigil-drip.svg"
     },
     {
       "id": "vine-trail",

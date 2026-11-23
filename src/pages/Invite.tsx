@@ -157,12 +157,12 @@ export function Invite() {
           // makes a field of characters read as a solid thing
           const nearness = clamp01(0.5 - seat.toward / (scene.size * 1.6))
           const depthFade = 1 - upright * 0.45 * (1 - nearness)
-          const fontSize = Math.round(cell * 1.08 * scale * 2) / 2
+          const fontSize = Math.round(cell * (point.snow ? 0.8 : 1.08) * scale * 2) / 2
           if (fontSize !== currentFont) {
             currentFont = fontSize
             ctx.font = `${fontSize}px "IBM Plex Mono", ui-monospace, monospace`
           }
-          ctx.globalAlpha = (point.snow ? glyphAlpha * 0.8 : glyphAlpha) * depthFade
+          ctx.globalAlpha = (point.snow ? glyphAlpha * 0.5 : glyphAlpha) * depthFade
           ctx.fillStyle = mixHex(point.color, INK.code, blockMix)
           ctx.fillText(point.glyph, screenX, screenY)
         }
@@ -210,7 +210,7 @@ export function Invite() {
         <header className="invite-head">
           <h1 className="invite-title">{BOOTH_NAME}</h1>
           <p className="invite-lead">
-            Three photographs, one blue strip. {PARTY_NAME}, {PARTY_YEAR}.
+            Three photographs, one strip. {PARTY_NAME}, {PARTY_YEAR}.
           </p>
         </header>
 
