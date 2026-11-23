@@ -319,7 +319,11 @@ const branch = (p0, p1, p2, p3, rootWidth, tipWidth = 0, steps = 30) => {
     left.push(`${(x + outX * half).toFixed(1)} ${(y + outY * half).toFixed(1)}`)
     right.push(`${(x - outX * half).toFixed(1)} ${(y - outY * half).toFixed(1)}`)
   }
-  return `<path d="M${left.join(' L')} L${right.reverse().join(' L')} Z" stroke-width="0" />`
+  // a dot on the root rounds off what would otherwise be a chisel end
+  return (
+    `<path d="M${left.join(' L')} L${right.reverse().join(' L')} Z" stroke-width="0" />` +
+    `<circle cx="${p0[0]}" cy="${p0[1]}" r="${(rootWidth / 2).toFixed(1)}" />`
+  )
 }
 
 // a branch that curls in on itself, the way a young shoot does
