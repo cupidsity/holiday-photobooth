@@ -41,12 +41,16 @@ function clamp(value: number, low: number, high: number): number {
   return value < low ? low : value > high ? high : value
 }
 
+// returns hex, so the result can be mixed again
 function mixHex(from: string, to: string, amount: number): string {
   const read = (hex: string) => [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16))
   const [fromRed, fromGreen, fromBlue] = read(from)
   const [toRed, toGreen, toBlue] = read(to)
-  const blend = (left: number, right: number) => Math.round(left + (right - left) * amount)
-  return `rgb(${blend(fromRed, toRed)}, ${blend(fromGreen, toGreen)}, ${blend(fromBlue, toBlue)})`
+  const blend = (left: number, right: number) =>
+    Math.round(left + (right - left) * amount)
+      .toString(16)
+      .padStart(2, '0')
+  return `#${blend(fromRed, toRed)}${blend(fromGreen, toGreen)}${blend(fromBlue, toBlue)}`
 }
 
 function packedToCss(packed: number): string {
@@ -177,9 +181,12 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       const foldFrom = foldFromRef.current
       const folding = foldFrom === null ? 0 : clamp((now - foldFrom) / FOLD_MS, 0, 1)
       const fold = easeInOut(folding)
-      // the colour changes hands well before the characters arrive, so the
-      // first thing that reads is the tree turning into the strip's own ink
-      const inking = clamp(folding * 2.1, 0, 1)
+      // the characters take the strip's ink early, so the colour change is the
+      // first thing that reads, then settle the rest of the way into the paper
+      // itself so what is left standing is a clean strip
+      const inking = clamp(folding * 3.4, 0, 1)
+      const sinking = clamp((folding - 0.26) / 0.42, 0, 1)
+      const landedInk = mixHex(STRIP_INK, STRIP_PAPER, sinking)
       const standing = 1 - fold
 
       // the tree holds still under a finger and picks its spin back up the
@@ -362,7 +369,7 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
             const y = row * cellHeight + (landedY - row * cellHeight) * fold
 
             ctx.globalAlpha = 1
-            ctx.fillStyle = mixPacked(colorBuffer[index], STRIP_INK, inking)
+            ctx.fillStyle = mixPacked(colorBuffer[index], landedInk, inking)
             ctx.fillText(glyphAt(code), x, y)
           }
         }
