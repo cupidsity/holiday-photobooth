@@ -9,8 +9,13 @@
       "ink": "#7d1222",
       "art": {
         "left": 160,
-        "width": 1000,
-        "height": 1800
+        "top": 50,
+        "width": 679,
+        "height": 1720,
+        "source": {
+          "width": 1000,
+          "height": 1800
+        }
       },
       "windows": [
         {
@@ -50,8 +55,13 @@
       "ink": "#4a3566",
       "art": {
         "left": 160,
-        "width": 1000,
-        "height": 1800
+        "top": 30,
+        "width": 679,
+        "height": 1740,
+        "source": {
+          "width": 1000,
+          "height": 1800
+        }
       },
       "windows": [
         {
@@ -91,8 +101,13 @@
       "ink": "#6b3410",
       "art": {
         "left": 160,
-        "width": 1000,
-        "height": 1800
+        "top": 0,
+        "width": 679,
+        "height": 1770,
+        "source": {
+          "width": 1000,
+          "height": 1800
+        }
       },
       "windows": [
         {

@@ -1,7 +1,15 @@
 import { Frame, loadImage } from './assets'
 import { PhotoFilter, cssFilter, developPhoto, supportsCanvasFilter, withExposure } from './filters'
 import { layGrain, layHalation, laySpeckle, layVignette, stampCanvas } from './paper'
-import { DEFAULT_CAPTION_Y, DEFAULT_WINDOWS, STRIP, Window, drawCover } from './strip'
+import {
+  DEFAULT_CAPTION_Y,
+  DEFAULT_WINDOWS,
+  STRIP,
+  Window,
+  artScale,
+  drawCover,
+  stripHeight,
+} from './strip'
 
 export type CaptionFace = 'script' | 'serif'
 
@@ -115,7 +123,7 @@ function drawEmptyCell(ctx: CanvasRenderingContext2D, frame: Frame, index: numbe
 async function drawSticker(ctx: CanvasRenderingContext2D, sticker: PlacedSticker, options: StripOptions) {
   const size = sticker.size * STRIP.width
   const centerX = sticker.x * STRIP.width
-  const centerY = sticker.y * STRIP.height
+  const centerY = sticker.y * stripHeight(options.frame.art)
 
   ctx.save()
   // a photogram does not sit on the print, it is part of it: lighten lets the
@@ -180,9 +188,10 @@ export async function renderStripBase(
   const filter = withExposure(options.filter, options.exposure)
   const nativeFilter = supportsCanvasFilter()
 
+  const height = stripHeight(frame.art)
   ctx.save()
   ctx.fillStyle = frame.background
-  ctx.fillRect(0, 0, STRIP.width, STRIP.height)
+  ctx.fillRect(0, 0, STRIP.width, height)
   ctx.restore()
 
   for (let index = 0; index < STRIP.photoCount; index += 1) {
@@ -202,7 +211,7 @@ export async function renderStripBase(
     layVignette(ctx, rect, options.paper)
   }
 
-  laySpeckle(ctx, STRIP.width, STRIP.height, { paper: options.paper })
+  laySpeckle(ctx, STRIP.width, height, { paper: options.paper })
   if (forPreview) return
 
   for (const sticker of options.stickers) {
@@ -219,9 +228,16 @@ export async function renderStripBase(
           if (rect) ctx.drawImage(art, rect.x, rect.y, rect.width, rect.height)
         }
       } else if (frame.art) {
-        // the drawn frames are exported centred in a wider canvas, so the art
-        // goes down shifted to put its own left edge on the strip's
-        ctx.drawImage(art, -frame.art.left, 0, frame.art.width, frame.art.height)
+        // a drawn frame is laid down cropped to its own bounds and scaled to
+        // the strip's width, so the padding it was exported with never shows
+        const scale = artScale(frame.art)
+        ctx.drawImage(
+          art,
+          -frame.art.left * scale,
+          -frame.art.top * scale,
+          art.naturalWidth * scale,
+          art.naturalHeight * scale,
+        )
       } else {
         ctx.drawImage(art, 0, 0, STRIP.width, STRIP.height)
       }
@@ -236,13 +252,13 @@ export async function renderStripBase(
 
   // the grain goes on last so it runs across photos, silhouettes and paper
   // alike, which is what stops anything looking stuck on afterwards
-  layGrain(ctx, STRIP.width, STRIP.height, { paper: options.paper })
+  layGrain(ctx, STRIP.width, height, { paper: options.paper })
 }
 
 export async function renderStrip(options: StripOptions): Promise<HTMLCanvasElement> {
   const canvas = document.createElement('canvas')
   canvas.width = STRIP.width
-  canvas.height = STRIP.height
+  canvas.height = stripHeight(options.frame.art)
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('this browser will not give us a 2d canvas')
 

@@ -9,6 +9,27 @@ export const STRIP = {
 
 export type Window = { x: number; y: number; width: number; height: number }
 
+// the opaque bounds of a drawn frame inside its own file. the strip is cropped
+// to this, so the padding a frame was exported with never shows as a margin
+export type ArtBox = {
+  left: number
+  top: number
+  width: number
+  height: number
+  // the size of the file the art was measured in
+  source: { width: number; height: number }
+}
+
+// how much a frame's art is scaled to meet the strip's width
+export function artScale(art?: ArtBox): number {
+  return art ? STRIP.width / art.width : 1
+}
+
+// a frame as tall as its own art, rather than every frame forced to one height
+export function stripHeight(art?: ArtBox): number {
+  return art ? Math.round(art.height * artScale(art)) : STRIP.height
+}
+
 // where the photos sit when a frame does not bring its own windows: the shape
 // the drawn frames share, shifted into strip space
 export const DEFAULT_WINDOWS: Window[] = [

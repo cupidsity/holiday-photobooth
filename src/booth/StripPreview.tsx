@@ -8,7 +8,7 @@ import {
   renderStripBase,
 } from '../lib/render'
 import { GRAIN_TILE, STAMP_TILE, grainDataUrl, grainOpacity, stampDataUrl } from '../lib/paper'
-import { DEFAULT_CAPTION_Y, STRIP } from '../lib/strip'
+import { DEFAULT_CAPTION_Y, STRIP, stripHeight } from '../lib/strip'
 import { LiftIcon, ResizeIcon } from './icons'
 
 type Props = {
@@ -51,13 +51,13 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
     const canvas = canvasRef.current
     if (!canvas) return
     canvas.width = STRIP.width
-    canvas.height = STRIP.height
+    canvas.height = stripHeight(options.frame.art)
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     let stale = false
     ensureFonts().then(() => {
       if (stale) return
-      ctx.clearRect(0, 0, STRIP.width, STRIP.height)
+      ctx.clearRect(0, 0, STRIP.width, canvas.height)
       return renderStripBase(ctx, options, true)
     })
     return () => {
@@ -141,7 +141,10 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
     if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null
   }
 
-  const previewHeight = surfaceWidth * (STRIP.height / STRIP.width)
+  const tall = stripHeight(options.frame.art)
+  const previewHeight = surfaceWidth * (tall / STRIP.width)
+  // one source pixel of the frame's file, in preview pixels
+  const sourceToPreview = options.frame.art ? surfaceWidth / options.frame.art.width : 0
   const grainScale = surfaceWidth ? (GRAIN_TILE * surfaceWidth) / STRIP.width : GRAIN_TILE
   const stampScale = surfaceWidth ? (STAMP_TILE * surfaceWidth) / STRIP.width : STAMP_TILE
 
@@ -225,13 +228,15 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
           src={options.frame.src}
           alt=""
           draggable={false}
-          // a drawn frame is exported centred in a wider canvas, so it is laid
-          // over the strip at its own proportions rather than stretched to fit
+          // the art is laid over the strip cropped to its own bounds, exactly
+          // as the export does it, rather than stretched to fill
           style={
             options.frame.art
               ? {
-                  width: `${(options.frame.art.width / STRIP.width) * 100}%`,
-                  left: `${(-options.frame.art.left / STRIP.width) * 100}%`,
+                  width: `${options.frame.art.source.width * sourceToPreview}px`,
+                  height: `${options.frame.art.source.height * sourceToPreview}px`,
+                  left: `${-options.frame.art.left * sourceToPreview}px`,
+                  top: `${-options.frame.art.top * sourceToPreview}px`,
                 }
               : undefined
           }
@@ -254,7 +259,7 @@ export function StripPreview({ options, selectedKey, onSelect, onChange }: Props
               className="strip-caption"
               aria-hidden="true"
               style={{
-                top: `${(centre / STRIP.height) * 100}%`,
+                top: `${(centre / tall) * 100}%`,
                 color: options.frame.ink,
                 fontFamily: captionFamily(options.captionFace),
                 fontWeight: line === 'big' ? metrics.weight : 400,

@@ -7,9 +7,9 @@ export type Frame = {
   src?: string
   background: string
   ink: string
-  // where the art sits in its own file: drawn frames are exported centred in a
-  // wider canvas, so the strip crops to the art
-  art?: { left: number; width: number; height: number }
+  // where the art sits in its own file: drawn frames are exported with padding
+  // round them, so the strip crops to the art
+  art?: ArtBox
   // the frame's own photo windows, in strip coordinates
   windows?: Window[]
   // the height the caption is centred on, or null for a frame whose art runs
@@ -21,7 +21,7 @@ export type Frame = {
 }
 
 // a sticker is either a piece of line art or a word set in the caption hand
-import { Window } from './strip'
+import { ArtBox, Window, artScale } from './strip'
 
 export type Sticker = {
   id: string
@@ -42,6 +42,16 @@ export const PAPER_FRAMES: Frame[] = [
   { id: 'sunprint', name: 'sunprint', kind: 'paper', background: '#123a6e', ink: '#eaf3fc' },
   { id: 'midnight', name: 'midnight', kind: 'paper', background: '#0a1c38', ink: '#dbe9f8' },
 ]
+
+function scaleWindow(window: Window, art?: ArtBox): Window {
+  const scale = artScale(art)
+  return {
+    x: (window.x - (art?.left ?? 0)) * scale,
+    y: (window.y - (art?.top ?? 0)) * scale,
+    width: window.width * scale,
+    height: window.height * scale,
+  }
+}
 
 type Manifest<T> = { items?: T[] } | T[]
 
@@ -70,14 +80,14 @@ export async function loadFrames(): Promise<Frame[]> {
       background: frame.background ?? '#f6efe2',
       ink: frame.ink ?? '#1d3b2a',
       art: frame.art,
-      // the manifest measures windows in the artwork's own file, so they are
-      // moved by however much the strip crops off its left edge
-      windows: frame.windows?.map((window) => ({
-        ...window,
-        x: window.x - (frame.art?.left ?? 0),
-      })),
-      caption: frame.caption,
-      captionScale: frame.captionScale,
+      // the manifest measures everything in the artwork's own file, so it is
+      // all moved by the crop and scaled by however much the art is resized
+      windows: frame.windows?.map((window) => scaleWindow(window, frame.art)),
+      caption:
+        frame.caption === null || frame.caption === undefined
+          ? frame.caption
+          : (frame.caption - (frame.art?.top ?? 0)) * artScale(frame.art),
+      captionScale: (frame.captionScale ?? 1) * artScale(frame.art),
     }))
   return [...normalised, ...PAPER_FRAMES]
 }
