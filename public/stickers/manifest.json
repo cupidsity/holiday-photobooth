@@ -13,16 +13,16 @@
       "src": "/stickers/vine-branch.svg"
     },
     {
-      "id": "vine-coil",
-      "name": "coil",
+      "id": "vine-curl",
+      "name": "curl",
       "group": "filigree",
-      "src": "/stickers/vine-coil.svg"
+      "src": "/stickers/vine-curl.svg"
     },
     {
-      "id": "vine-floret",
-      "name": "floret",
+      "id": "vine-bloom",
+      "name": "bloom",
       "group": "filigree",
-      "src": "/stickers/vine-floret.svg"
+      "src": "/stickers/vine-bloom.svg"
     },
     {
       "id": "vine-corner",

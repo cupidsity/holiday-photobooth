@@ -326,21 +326,40 @@ const branch = (p0, p1, p2, p3, rootWidth, tipWidth = 0, steps = 30) => {
   )
 }
 
-// a branch that curls in on itself, the way a young shoot does
-const coil = (cx, cy, radius, turns, from, rootWidth, steps = 46) => {
+// where a stem is at a given point along itself, and which way it is heading
+// there. everything that hangs off a stem is attached with these, so nothing
+// is placed by eye and nothing comes adrift
+const at = (curve, t) => [
+  along(t, curve[0][0], curve[1][0], curve[2][0], curve[3][0]),
+  along(t, curve[0][1], curve[1][1], curve[2][1], curve[3][1]),
+]
+const heading = (curve, t) =>
+  (Math.atan2(
+    slope(t, curve[0][1], curve[1][1], curve[2][1], curve[3][1]),
+    slope(t, curve[0][0], curve[1][0], curve[2][0], curve[3][0]),
+  ) *
+    180) /
+  Math.PI
+
+// a shoot that curls in on itself. it is given the point it grows from and the
+// way the stem was heading there, so it carries straight on out of the stem
+const coil = (x, y, going, radius, turns, rootWidth, steps = 46) => {
+  const from = going - 90
+  const centerX = x - Math.cos((from * Math.PI) / 180) * radius
+  const centerY = y - Math.sin((from * Math.PI) / 180) * radius
   const left = []
   const right = []
   for (let step = 0; step <= steps; step += 1) {
     const t = step / steps
-    const angle = (from + turns * 360 * t) * (Math.PI / 180)
+    const angle = ((from + turns * 360 * t) * Math.PI) / 180
     const reach = radius * (1 - t * 0.82)
-    const x = cx + Math.cos(angle) * reach
-    const y = cy + Math.sin(angle) * reach
+    const spotX = centerX + Math.cos(angle) * reach
+    const spotY = centerY + Math.sin(angle) * reach
     const outX = Math.cos(angle)
     const outY = Math.sin(angle)
     const half = (rootWidth * (1 - t)) / 2
-    left.push(`${(x + outX * half).toFixed(1)} ${(y + outY * half).toFixed(1)}`)
-    right.push(`${(x - outX * half).toFixed(1)} ${(y - outY * half).toFixed(1)}`)
+    left.push(`${(spotX + outX * half).toFixed(1)} ${(spotY + outY * half).toFixed(1)}`)
+    right.push(`${(spotX - outX * half).toFixed(1)} ${(spotY - outY * half).toFixed(1)}`)
   }
   return `<path d="M${left.join(' L')} L${right.reverse().join(' L')} Z" stroke-width="0" />`
 }
@@ -388,105 +407,212 @@ const glint = (cx, cy, radius) => {
   return `<path d="M${fix(cx)} ${fix(cy - radius)} Q${fix(cx + thin)} ${fix(cy - thin)} ${fix(cx + radius)} ${fix(cy)} Q${fix(cx + thin)} ${fix(cy + thin)} ${fix(cx)} ${fix(cy + radius)} Q${fix(cx - thin)} ${fix(cy + thin)} ${fix(cx - radius)} ${fix(cy)} Q${fix(cx - thin)} ${fix(cy - thin)} ${fix(cx)} ${fix(cy - radius)} Z" stroke-width="0" />`
 }
 
-const sigil = {
-  'vine-scroll': {
-    width: 180,
-    height: 420,
-    art: `
-      ${branch([96, 412], [40, 330], [150, 270], [96, 196], 15, 5)}
-      ${branch([96, 196], [52, 136], [140, 104], [104, 28], 5, 1.5)}
-      ${coil(126, 34, 26, 0.75, 150, 5)}
-      ${branch([92, 330], [50, 300], [34, 258], [46, 220], 6, 1.5)}
-      ${coil(44, 212, 18, 0.7, 120, 4)}
-      ${branch([100, 268], [142, 246], [150, 206], [132, 176], 5.5, 1.5)}
-      ${coil(130, 170, 16, 0.65, 70, 4)}
-      ${branch([94, 372], [136, 350], [150, 310], [136, 284], 5, 1.5)}
-      ${frond(92, 356, -150, 46, 13)}
-      ${frond(98, 300, -22, 40, 11)}
-      ${frond(92, 244, -158, 38, 11)}
-      ${frond(100, 180, -14, 34, 10)}
-      ${frond(98, 124, -164, 30, 9)}
-      ${floret(120, 60, 30, 12)}
-      ${floret(48, 266, 19, 40)}
-      ${floret(140, 330, 16, 20)}
-      ${glint(60, 112, 9)} ${glint(148, 160, 7)} ${glint(40, 180, 6)}
-      ${glint(132, 240, 6)} ${glint(56, 392, 7)} ${glint(156, 388, 5)}
-    `,
-  },
-  'vine-branch': {
-    width: 170,
-    height: 300,
-    art: `
-      ${branch([84, 292], [34, 232], [132, 186], [80, 118], 13, 4)}
-      ${branch([80, 118], [48, 82], [112, 60], [92, 20], 4, 1.4)}
-      ${coil(110, 26, 20, 0.7, 150, 4.5)}
-      ${branch([82, 230], [124, 212], [136, 176], [120, 150], 5, 1.5)}
-      ${coil(118, 144, 15, 0.65, 70, 4)}
-      ${frond(80, 258, -152, 42, 12)}
-      ${frond(86, 198, -20, 36, 10)}
-      ${frond(80, 150, -160, 32, 9)}
-      ${floret(44, 196, 22, 25)}
-      ${floret(126, 92, 17, 50)}
-      ${glint(132, 240, 7)} ${glint(40, 120, 6)} ${glint(140, 36, 5)}
-    `,
-  },
-  'vine-coil': {
-    width: 170,
-    height: 170,
-    art: `
-      ${branch([16, 160], [66, 152], [96, 124], [106, 76], 7, 2)}
-      ${coil(118, 64, 28, 0.9, 170, 4.5)}
-      ${branch([48, 152], [72, 130], [62, 100], [38, 88], 4.2, 1.2)}
-      ${coil(34, 80, 14, 0.6, 30, 3.6)}
-      ${frond(58, 142, -34, 38, 11)}
-      ${frond(88, 108, -150, 30, 9)}
-      ${floret(30, 40, 22, 15)}
-      ${glint(120, 134, 7)} ${glint(150, 100, 5)}
-    `,
-  },
-  'vine-floret': {
-    width: 150,
-    height: 170,
-    art: `
-      ${floret(76, 54, 36, 10)}
-      ${branch([76, 88], [58, 116], [92, 138], [70, 166], 5.5, 1.8)}
-      ${frond(74, 120, -158, 38, 11)}
-      ${frond(78, 142, -16, 32, 9)}
-      ${floret(124, 112, 16, 40)}
-      ${glint(22, 100, 8)} ${glint(130, 28, 6)}
-    `,
-  },
-  'vine-corner': {
-    width: 220,
-    height: 200,
-    art: `
-      ${branch([12, 192], [84, 190], [146, 156], [184, 78], 8, 2.4)}
-      ${coil(194, 62, 22, 0.8, 140, 4)}
-      ${branch([88, 186], [114, 152], [106, 118], [78, 104], 4.6, 1.3)}
-      ${coil(70, 98, 16, 0.65, 20, 4)}
-      ${frond(52, 188, -46, 42, 12)}
-      ${frond(124, 162, -140, 36, 10)}
-      ${frond(160, 116, -34, 30, 9)}
-      ${floret(40, 120, 24, 20)}
-      ${floret(154, 40, 17, 45)}
-      ${glint(110, 60, 8)} ${glint(206, 142, 6)} ${glint(16, 58, 5)}
-    `,
-  },
-  'vine-sprig': {
-    width: 120,
-    height: 240,
-    art: `
-      ${branch([58, 232], [34, 180], [84, 140], [62, 86], 9, 3)}
-      ${branch([62, 86], [44, 58], [80, 44], [66, 16], 3, 1.2)}
-      ${coil(78, 20, 14, 0.6, 150, 3.4)}
-      ${frond(56, 200, -150, 36, 10)}
-      ${frond(62, 160, -24, 32, 9)}
-      ${frond(58, 118, -158, 28, 8)}
-      ${floret(92, 170, 17, 30)}
-      ${glint(26, 140, 6)} ${glint(98, 92, 5)}
-    `,
-  },
-}
+// every piece is one main stem with things hung off it at known points along
+// its own curve, so a leaf always meets the stem and a coil always carries on
+// out of the tip it grows from
+const sigil = (() => {
+  const piece = (main, rootWidth, tipWidth, parts) => {
+    const body = [branch(main[0], main[1], main[2], main[3], rootWidth, tipWidth)]
+    for (const part of parts) body.push(part)
+    return body.join('\n      ')
+  }
+
+  const scrollStem = [
+    [96, 412],
+    [40, 330],
+    [150, 270],
+    [96, 196],
+  ]
+  const scrollTop = [
+    [96, 196],
+    [52, 136],
+    [140, 104],
+    [104, 28],
+  ]
+  const scrollSideA = [
+    [0, 0],
+    [0, 0],
+    [0, 0],
+    [0, 0],
+  ]
+
+  const vineScroll = (() => {
+    const lowerLeaf = at(scrollStem, 0.28)
+    const midLeaf = at(scrollStem, 0.62)
+    const upperLeaf = at(scrollTop, 0.3)
+    const crownLeaf = at(scrollTop, 0.66)
+    const sideRoot = at(scrollStem, 0.42)
+    const side = [sideRoot, [sideRoot[0] - 40, sideRoot[1] - 26], [36, 254], [46, 220]]
+    const sideTip = at(side, 1)
+    const spurRoot = at(scrollTop, 0.18)
+    const spur = [spurRoot, [spurRoot[0] + 44, spurRoot[1] - 14], [150, 200], [134, 176]]
+    const spurTip = at(spur, 1)
+    return piece(scrollStem, 15, 5, [
+      branch(scrollTop[0], scrollTop[1], scrollTop[2], scrollTop[3], 5, 1.5),
+      coil(at(scrollTop, 1)[0], at(scrollTop, 1)[1], heading(scrollTop, 1), 24, 0.8, 1.5),
+      branch(side[0], side[1], side[2], side[3], 6, 1.5),
+      coil(sideTip[0], sideTip[1], heading(side, 1), 17, 0.7, 1.5),
+      branch(spur[0], spur[1], spur[2], spur[3], 5.5, 1.5),
+      coil(spurTip[0], spurTip[1], heading(spur, 1), 15, 0.65, 1.5),
+      frond(lowerLeaf[0], lowerLeaf[1], heading(scrollStem, 0.28) - 118, 46, 13),
+      frond(midLeaf[0], midLeaf[1], heading(scrollStem, 0.62) + 118, 40, 11),
+      frond(upperLeaf[0], upperLeaf[1], heading(scrollTop, 0.3) - 118, 36, 10),
+      frond(crownLeaf[0], crownLeaf[1], heading(scrollTop, 0.66) + 118, 30, 9),
+      floret(118, 44, 28, 12),
+      floret(44, 214, 18, 40),
+      floret(136, 172, 15, 20),
+      glint(60, 112, 9),
+      glint(150, 150, 7),
+      glint(38, 170, 6),
+      glint(58, 392, 7),
+      glint(156, 372, 5),
+    ])
+  })()
+
+  const branchStem = [
+    [84, 292],
+    [34, 232],
+    [132, 186],
+    [80, 118],
+  ]
+  const branchTop = [
+    [80, 118],
+    [48, 82],
+    [112, 60],
+    [92, 20],
+  ]
+  const vineBranch = (() => {
+    const sideRoot = at(branchStem, 0.55)
+    const side = [sideRoot, [sideRoot[0] + 42, sideRoot[1] - 18], [138, 178], [120, 150]]
+    const sideTip = at(side, 1)
+    const lowLeaf = at(branchStem, 0.22)
+    const midLeaf = at(branchStem, 0.74)
+    const topLeaf = at(branchTop, 0.45)
+    return piece(branchStem, 13, 4, [
+      branch(branchTop[0], branchTop[1], branchTop[2], branchTop[3], 4, 1.4),
+      coil(at(branchTop, 1)[0], at(branchTop, 1)[1], heading(branchTop, 1), 19, 0.75, 1.4),
+      branch(side[0], side[1], side[2], side[3], 5, 1.5),
+      coil(sideTip[0], sideTip[1], heading(side, 1), 15, 0.65, 1.5),
+      frond(lowLeaf[0], lowLeaf[1], heading(branchStem, 0.22) - 118, 42, 12),
+      frond(midLeaf[0], midLeaf[1], heading(branchStem, 0.74) + 118, 34, 10),
+      frond(topLeaf[0], topLeaf[1], heading(branchTop, 0.45) - 118, 28, 8),
+      floret(42, 192, 21, 25),
+      floret(126, 88, 16, 50),
+      glint(132, 240, 7),
+      glint(38, 118, 6),
+      glint(142, 34, 5),
+    ])
+  })()
+
+  const coilStem = [
+    [16, 160],
+    [66, 152],
+    [96, 124],
+    [106, 76],
+  ]
+  const vineCoil = (() => {
+    const sideRoot = at(coilStem, 0.4)
+    const side = [sideRoot, [sideRoot[0] + 24, sideRoot[1] - 22], [58, 102], [38, 90]]
+    const sideTip = at(side, 1)
+    const leafAt = at(coilStem, 0.62)
+    return piece(coilStem, 7, 2, [
+      coil(at(coilStem, 1)[0], at(coilStem, 1)[1], heading(coilStem, 1), 27, 0.85, 2),
+      branch(side[0], side[1], side[2], side[3], 4.2, 1.2),
+      coil(sideTip[0], sideTip[1], heading(side, 1), 13, 0.6, 1.2),
+      frond(leafAt[0], leafAt[1], heading(coilStem, 0.62) + 118, 34, 10),
+      floret(30, 42, 21, 15),
+      glint(124, 136, 7),
+      glint(152, 104, 5),
+    ])
+  })()
+
+  const floretStem = [
+    [74, 164],
+    [94, 136],
+    [58, 112],
+    [76, 84],
+  ]
+  const vineFloret = (() => {
+    const lowLeaf = at(floretStem, 0.3)
+    const highLeaf = at(floretStem, 0.68)
+    return piece(floretStem, 6, 2.5, [
+      // turned so a petal points back down the stem, or the flower reads as
+      // floating just above it
+      floret(76, 58, 34, 36),
+      frond(lowLeaf[0], lowLeaf[1], heading(floretStem, 0.3) + 118, 34, 10),
+      frond(highLeaf[0], highLeaf[1], heading(floretStem, 0.68) - 118, 28, 9),
+      floret(122, 112, 15, 40),
+      glint(22, 100, 8),
+      glint(128, 28, 6),
+    ])
+  })()
+
+  const cornerStem = [
+    [12, 192],
+    [84, 190],
+    [146, 156],
+    [184, 78],
+  ]
+  const vineCorner = (() => {
+    const sideRoot = at(cornerStem, 0.42)
+    const side = [sideRoot, [sideRoot[0] + 28, sideRoot[1] - 34], [102, 118], [78, 106]]
+    const sideTip = at(side, 1)
+    const lowLeaf = at(cornerStem, 0.22)
+    const midLeaf = at(cornerStem, 0.66)
+    const highLeaf = at(cornerStem, 0.86)
+    return piece(cornerStem, 8, 2.4, [
+      coil(at(cornerStem, 1)[0], at(cornerStem, 1)[1], heading(cornerStem, 1), 21, 0.8, 2.4),
+      branch(side[0], side[1], side[2], side[3], 4.6, 1.3),
+      coil(sideTip[0], sideTip[1], heading(side, 1), 14, 0.6, 1.3),
+      frond(lowLeaf[0], lowLeaf[1], heading(cornerStem, 0.22) - 118, 40, 12),
+      frond(midLeaf[0], midLeaf[1], heading(cornerStem, 0.66) + 118, 32, 10),
+      frond(highLeaf[0], highLeaf[1], heading(cornerStem, 0.86) - 118, 26, 8),
+      floret(38, 118, 22, 20),
+      floret(152, 38, 16, 45),
+      glint(108, 58, 8),
+      glint(204, 140, 6),
+      glint(16, 56, 5),
+    ])
+  })()
+
+  const sprigStem = [
+    [58, 232],
+    [34, 180],
+    [84, 140],
+    [62, 86],
+  ]
+  const sprigTop = [
+    [62, 86],
+    [44, 58],
+    [80, 44],
+    [66, 16],
+  ]
+  const vineSprig = (() => {
+    const lowLeaf = at(sprigStem, 0.26)
+    const midLeaf = at(sprigStem, 0.58)
+    const highLeaf = at(sprigStem, 0.85)
+    return piece(sprigStem, 9, 3, [
+      branch(sprigTop[0], sprigTop[1], sprigTop[2], sprigTop[3], 3, 1.2),
+      coil(at(sprigTop, 1)[0], at(sprigTop, 1)[1], heading(sprigTop, 1), 13, 0.65, 1.2),
+      frond(lowLeaf[0], lowLeaf[1], heading(sprigStem, 0.26) - 118, 34, 10),
+      frond(midLeaf[0], midLeaf[1], heading(sprigStem, 0.58) + 118, 30, 9),
+      frond(highLeaf[0], highLeaf[1], heading(sprigStem, 0.85) - 118, 24, 7),
+      floret(90, 166, 16, 30),
+      glint(24, 138, 6),
+      glint(98, 90, 5),
+    ])
+  })()
+
+  void scrollSideA
+  return {
+    'vine-scroll': { width: 180, height: 420, art: vineScroll },
+    'vine-branch': { width: 170, height: 300, art: vineBranch },
+    'vine-curl': { width: 170, height: 170, art: vineCoil },
+    'vine-bloom': { width: 150, height: 170, art: vineFloret },
+    'vine-corner': { width: 220, height: 200, art: vineCorner },
+    'vine-sprig': { width: 120, height: 240, art: vineSprig },
+  }
+})()
 
 const flash = {
   'vine-trail': {
