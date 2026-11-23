@@ -431,10 +431,15 @@ export function rasterise(
   const anchorY = model.starAnchorY * pitchCos
   const anchorZ = -model.starAnchorY * pitchSin
 
+  // measured over everything the model actually occupies, parcels to star tip,
+  // so the growing front passes through the star at the same rate it passed
+  // through the branches instead of switching it on at the end
+  const fullSpan = model.bottomY - model.topY || 1
+
   for (const sample of model.samples) {
     // the tree grows up out of the ground, so anything above the front has not
     // been printed yet
-    const down = Math.max(0, sample.y / model.height + 0.5)
+    const down = (sample.y - model.topY) / fullSpan
     if (down < front) continue
     const onFront = down - front < 0.035 && reveal < 1
 
