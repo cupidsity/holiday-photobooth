@@ -29,7 +29,8 @@ const NEEDLE_TINTS = [
   '#3cb45c',
   '#19623a',
 ]
-const GIFT_COLORS = ['#e02a3a', '#f4eee2', '#e8b23c', '#3f7fd8']
+const GIFT_COLORS = ['#e02a3a', '#2f7fd8', '#e8b23c', '#c43a8f']
+const RIBBON_COLORS = ['#f4eee2', '#ffd45e', '#f4eee2', '#ffd45e']
 
 // dark to bright. the ramp is what draws the shading, so it has to climb in
 // ink coverage evenly rather than alphabetically
@@ -43,7 +44,7 @@ export type Sample = {
   nx: number
   ny: number
   nz: number
-  kind: 'needle' | 'trunk' | 'light' | 'star' | 'gift' | 'garland'
+  kind: 'needle' | 'trunk' | 'bauble' | 'cap' | 'star' | 'gift' | 'garland' | 'ribbon'
   color?: string
   phase: number
   // nudges this sample's character off the ramp so neighbours never agree
@@ -88,7 +89,7 @@ export function buildTree(height: number, density = 1): TreeModel {
   const random = makeRandom(20261123)
   const samples: Sample[] = []
   const baseRadius = height * 0.46
-  const layers = Math.round(130 * density)
+  const layers = Math.round(150 * density)
   let lightCount = 0
 
   for (let layer = 0; layer < layers; layer += 1) {
@@ -97,7 +98,7 @@ export function buildTree(height: number, density = 1): TreeModel {
     const tier = (down * 7) % 1
     const radius = baseRadius * (0.04 + down * 0.96) * (0.72 + tier * 0.28)
     const y = (down - 0.5) * height
-    const steps = Math.max(14, Math.round(radius * 1.5 * density))
+    const steps = Math.max(24, Math.round(radius * 3.4 * density))
 
     for (let step = 0; step < steps; step += 1) {
       const theta = (step / steps) * Math.PI * 2 + layer * 0.21
@@ -106,8 +107,6 @@ export function buildTree(height: number, density = 1): TreeModel {
       // the cone's surface leans outward and up, so its normal does too
       const lean = 0.42
       const length = Math.hypot(cos, lean, sin)
-      const lit = down > 0.06 && random() < 0.006
-      if (lit) lightCount += 1
       samples.push({
         x: cos * radius,
         y,
@@ -115,19 +114,73 @@ export function buildTree(height: number, density = 1): TreeModel {
         nx: cos / length,
         ny: -lean / length,
         nz: sin / length,
-        kind: lit ? 'light' : 'needle',
-        color: lit
-          ? LIGHT_COLORS[Math.floor(random() * LIGHT_COLORS.length)]
-          : NEEDLE_TINTS[Math.floor(random() * NEEDLE_TINTS.length)],
+        kind: 'needle',
+        color: NEEDLE_TINTS[Math.floor(random() * NEEDLE_TINTS.length)],
         phase: random() * Math.PI * 2,
         jitter: Math.round(random() * 4) - 2,
       })
     }
   }
 
+  // the baubles. each one is a small sphere of its own rather than a coloured
+  // character, so it shades like a ball and keeps its shape as the tree turns
+  const baubleCount = Math.round(54 * density)
+  const baubleRadius = height * 0.019
+  for (let ornament = 0; ornament < baubleCount; ornament += 1) {
+    const down = 0.1 + random() * 0.88
+    const tier = (down * 7) % 1
+    const sitting = baseRadius * (0.04 + down * 0.96) * (0.72 + tier * 0.28)
+    const theta = random() * Math.PI * 2
+    const hangX = Math.cos(theta) * (sitting + baubleRadius * 0.6)
+    const hangZ = Math.sin(theta) * (sitting + baubleRadius * 0.6)
+    const hangY = (down - 0.5) * height
+    const color = LIGHT_COLORS[Math.floor(random() * LIGHT_COLORS.length)]
+    const phase = random() * Math.PI * 2
+    lightCount += 1
+
+    for (let band = 0; band <= 6; band += 1) {
+      const polar = (band / 6) * Math.PI
+      const ringSteps = Math.max(1, Math.round(Math.sin(polar) * 11))
+      for (let around = 0; around < ringSteps; around += 1) {
+        const azimuth = (around / ringSteps) * Math.PI * 2
+        const nx = Math.sin(polar) * Math.cos(azimuth)
+        const ny = -Math.cos(polar)
+        const nz = Math.sin(polar) * Math.sin(azimuth)
+        samples.push({
+          x: hangX + nx * baubleRadius,
+          y: hangY + ny * baubleRadius,
+          z: hangZ + nz * baubleRadius,
+          nx,
+          ny,
+          nz,
+          kind: 'bauble',
+          color,
+          phase,
+          jitter: 0,
+        })
+      }
+    }
+
+    // the little cap and hook it hangs from
+    for (let step = 0; step < 4; step += 1) {
+      samples.push({
+        x: hangX,
+        y: hangY - baubleRadius - step * baubleRadius * 0.28,
+        z: hangZ,
+        nx: 0,
+        ny: 0,
+        nz: 1,
+        kind: 'cap',
+        color: '#e8c33c',
+        phase,
+        jitter: 0,
+      })
+    }
+  }
+
   // a ribbon wound five times round the cone, sitting just proud of the
   // needles so it stays in front of them as the tree turns
-  const garlandSteps = Math.round(1400 * density)
+  const garlandSteps = Math.round(2200 * density)
   for (let step = 0; step < garlandSteps; step += 1) {
     const down = 0.14 + (step / garlandSteps) * 0.84
     const tier = (down * 7) % 1
@@ -171,44 +224,63 @@ export function buildTree(height: number, density = 1): TreeModel {
     }
   }
 
-  // parcels round the foot of the tree, as flat-faced boxes
-  for (let box = 0; box < 11; box += 1) {
-    const angle = (box / 11) * Math.PI * 2 + 0.5
-    const away = baseRadius * (0.62 + random() * 0.62)
-    const size = height * (0.07 + random() * 0.05)
-    const centerX = Math.cos(angle) * away
-    const centerZ = Math.sin(angle) * away
-    const top = height * 0.54 - size
-    const color = GIFT_COLORS[box % GIFT_COLORS.length]
-    const steps = Math.max(5, Math.round(size * 0.5))
-    for (let across = 0; across <= steps; across += 1) {
-      for (let down = 0; down <= steps; down += 1) {
-        const offsetX = (across / steps - 0.5) * size
-        const offsetY = (down / steps) * size
-        samples.push({
-          x: centerX + offsetX,
-          y: top + offsetY,
-          z: centerZ - size * 0.5,
-          nx: 0,
-          ny: 0,
-          nz: -1,
-          kind: 'gift',
-          color,
-          phase: 0,
-          jitter: 0,
-        })
-        samples.push({
-          x: centerX + offsetX,
-          y: top,
-          z: centerZ - size * 0.5 + (down / steps) * size,
-          nx: 0,
-          ny: -1,
-          nz: 0,
-          kind: 'gift',
-          color,
-          phase: 0,
-          jitter: 0,
-        })
+  // parcels round the foot of the tree. each one is a whole box with five
+  // faces and its own ribbon, so it still reads as a present from any angle
+  // instead of collapsing to a streak when it turns edge on
+  for (let box = 0; box < 8; box += 1) {
+    const angle = (box / 8) * Math.PI * 2 + 0.6
+    const away = baseRadius * (0.66 + random() * 0.5)
+    const wide = height * (0.075 + random() * 0.05)
+    const tall = wide * (0.62 + random() * 0.4)
+    const deep = wide * (0.72 + random() * 0.35)
+    const yaw = random() * Math.PI
+    const yawCos = Math.cos(yaw)
+    const yawSin = Math.sin(yaw)
+    const standX = Math.cos(angle) * away
+    const standZ = Math.sin(angle) * away
+    const floor = height * 0.54
+    const paper = GIFT_COLORS[box % GIFT_COLORS.length]
+    const ribbon = RIBBON_COLORS[box % RIBBON_COLORS.length]
+    const step = Math.max(3, Math.round(wide / 7))
+
+    const put = (
+      localX: number,
+      localY: number,
+      localZ: number,
+      normalX: number,
+      normalZ: number,
+      normalY: number,
+      onRibbon: boolean,
+    ) => {
+      samples.push({
+        x: standX + localX * yawCos - localZ * yawSin,
+        y: floor - tall + localY,
+        z: standZ + localX * yawSin + localZ * yawCos,
+        nx: normalX * yawCos - normalZ * yawSin,
+        ny: normalY,
+        nz: normalX * yawSin + normalZ * yawCos,
+        kind: onRibbon ? 'ribbon' : 'gift',
+        color: onRibbon ? ribbon : paper,
+        phase: 0,
+        jitter: 0,
+      })
+    }
+
+    const ribbonWidth = wide * 0.11
+    for (let across = -wide / 2; across <= wide / 2; across += step) {
+      for (let through = -deep / 2; through <= deep / 2; through += step) {
+        // the lid, with the ribbon crossing it both ways
+        put(across, 0, through, 0, 0, -1, Math.abs(across) < ribbonWidth || Math.abs(through) < ribbonWidth)
+      }
+      for (let up = 0; up <= tall; up += step) {
+        put(across, up, -deep / 2, 0, -1, 0, Math.abs(across) < ribbonWidth)
+        put(across, up, deep / 2, 0, 1, 0, Math.abs(across) < ribbonWidth)
+      }
+    }
+    for (let through = -deep / 2; through <= deep / 2; through += step) {
+      for (let up = 0; up <= tall; up += step) {
+        put(-wide / 2, up, through, -1, 0, 0, Math.abs(through) < ribbonWidth)
+        put(wide / 2, up, through, 1, 0, 0, Math.abs(through) < ribbonWidth)
       }
     }
   }
@@ -339,12 +411,18 @@ export function rasterise(
     let blue: number
     let glyph = ''
 
-    if (sample.kind === 'light') {
-      const twinkle = 0.78 + 0.22 * Math.sin(time * 0.004 + sample.phase)
-      level = 1
-      glyph = '0'
-      // a bauble stays its own colour rather than being dimmed into the tree
-      ;[red, green, blue] = mixHex(sample.color ?? '#ffc21f', '#ffffff', (twinkle - 0.78) * 1.6)
+    if (sample.kind === 'bauble') {
+      const twinkle = 0.84 + 0.16 * Math.sin(time * 0.004 + sample.phase)
+      // the ball's own shading: a bright highlight where the light lands, a
+      // solid body, and a dark rim on the side turned away
+      const shaped = 0.2 + 0.8 * facing
+      level = Math.min(1, shaped * twinkle + 0.18)
+      glyph = level > 0.82 ? '@' : level > 0.58 ? '0' : level > 0.36 ? 'o' : ':'
+      ;[red, green, blue] = mixHex('#140a0c', sample.color ?? '#ffc21f', 0.22 + level * 0.95)
+    } else if (sample.kind === 'cap') {
+      level = 0.9
+      glyph = 'I'
+      ;[red, green, blue] = mixHex('#2a2008', sample.color ?? '#e8c33c', 0.9)
     } else if (sample.kind === 'star') {
       level = 1
       glyph = '*'
@@ -356,8 +434,11 @@ export function rasterise(
       level = 0.95
       glyph = sample.color === '#ffc21f' ? 'o' : '*'
       ;[red, green, blue] = mixHex('#6b4a08', sample.color ?? '#ffc21f', shimmer)
-    } else if (sample.kind === 'gift') {
-      ;[red, green, blue] = mixHex('#2a1016', sample.color ?? '#d8323f', 0.35 + level * 0.65)
+    } else if (sample.kind === 'gift' || sample.kind === 'ribbon') {
+      // wrapping paper is flat colour, so the glyph carries the shading rather
+      // than the hue: that is what keeps a box looking like a box
+      glyph = sample.kind === 'ribbon' ? '=' : level > 0.62 ? '#' : level > 0.38 ? '%' : '+'
+      ;[red, green, blue] = mixHex('#1a0d12', sample.color ?? '#d8323f', 0.3 + level * 0.8)
     } else {
       // each needle keeps its own colour and the light only decides how much of
       // it shows, which is what gives the weave its mixed reds and golds
@@ -382,22 +463,10 @@ export function rasterise(
     colorBuffer[index] = packed
     filled += 1
 
-    if (sample.kind === 'light' || sample.kind === 'garland') {
-      const spread =
-        sample.kind === 'garland'
-          ? [
-              [-1, 0],
-              [1, 0],
-            ]
-          : [
+    if (sample.kind === 'garland') {
+      const spread = [
         [-1, 0],
         [1, 0],
-        [0, -1],
-        [0, 1],
-        [-1, -1],
-        [1, 1],
-        [-1, 1],
-        [1, -1],
       ]
       for (const [acrossOffset, downOffset] of spread) {
         const nearColumn = column + acrossOffset
@@ -405,10 +474,8 @@ export function rasterise(
         if (nearColumn < 0 || nearColumn >= columns || nearRow < 0 || nearRow >= rows) continue
         const nearIndex = nearRow * columns + nearColumn
         if (spunZ <= depthBuffer[nearIndex]) continue
-        const corner = acrossOffset !== 0 && downOffset !== 0
         depthBuffer[nearIndex] = spunZ
-        // 'o' on the rim and '0' through the middle, so the bauble has an edge
-        glyphBuffer[nearIndex] = sample.kind === 'garland' ? 111 : corner ? 111 : 48
+        glyphBuffer[nearIndex] = 111
         colorBuffer[nearIndex] = packed
       }
     }

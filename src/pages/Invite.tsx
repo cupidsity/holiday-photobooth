@@ -7,8 +7,9 @@ const FOCAL = 900
 // how long the tree takes to grow in when the screen is first opened
 const REVEAL_MS = 3200
 const AUTO_SPIN = 0.32
-// how far the view can be tipped: a little under the tree, well over the top
-const PITCH_LOW = -0.35
+// the view tips up over the tree but never under it: from below the cone turns
+// inside out and the whole thing stops reading as a tree
+const PITCH_LOW = 0
 const PITCH_HIGH = 1.1
 
 function clamp(value: number, low: number, high: number): number {
@@ -72,12 +73,13 @@ export function Invite() {
       canvas.height = Math.round(height * ratio)
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
 
-      const wanted = lightweight ? 68 : 104
-      fontSize = Math.max(7, (width / wanted) / 0.6)
-      // square cells: the glyphs overlap a little vertically, which is what
-      // gives the tree its woven texture
+      // the grid is set from the rows, not the columns: a character cell is
+      // 0.6em wide and a little over 1em tall, so spacing the rows any tighter
+      // is what makes glyphs sit on top of each other
+      const wantedRows = lightweight ? 46 : 64
+      cellHeight = Math.max(8, height / wantedRows)
+      fontSize = cellHeight / 1.06
       cellWidth = fontSize * 0.6
-      cellHeight = cellWidth
       columns = Math.ceil(width / cellWidth) + 1
       rows = Math.ceil(height / cellHeight) + 1
       const size = columns * rows
@@ -108,7 +110,7 @@ export function Invite() {
       // the tree is taller than its own height: the star sits above the cone and
       // the parcels sit below it, and perspective magnifies whatever is nearest.
       // fit all of that, or the foot of the tree runs off the bottom
-      const scale = Math.min(width / 1500, height / 1580)
+      const scale = Math.min(width / 1420, height / 1500)
       const centerX = width / 2
       const centerY = height * 0.52
       const reveal = clamp((now - revealFromRef.current) / REVEAL_MS, 0, 1)
