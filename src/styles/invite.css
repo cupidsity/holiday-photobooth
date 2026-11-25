@@ -40,12 +40,6 @@
   letter-spacing: -0.01em;
 }
 
-.invite-lead {
-  margin: 0.25em 0 0;
-  font-size: clamp(10px, 1.2vmin, 15px);
-  opacity: 0.72;
-}
-
 .invite-call {
   margin: 0.4em 0 0;
   font-size: clamp(10px, 1.2vmin, 15px);

@@ -12,7 +12,7 @@ import {
   rasterise,
   shootingGlyph,
 } from '../invite/asciiTree'
-import { BOOTH_NAME, PARTY_NAME, PARTY_YEAR } from '../lib/config'
+import { BOOTH_NAME } from '../lib/config'
 import '../styles/invite.css'
 
 const FOCAL = 900
@@ -475,9 +475,6 @@ export function Invite({ onEnter }: { onEnter: () => void }) {
       >
         <header className="invite-head">
           <h1 className="invite-title">{BOOTH_NAME}</h1>
-          <p className="invite-lead">
-            Four photographs, one strip. {PARTY_NAME}, {PARTY_YEAR}.
-          </p>
           <p className="invite-call">Tap the tree to start</p>
         </header>
 
